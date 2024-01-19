@@ -1,8 +1,16 @@
-# React + Vite
+# Mp4Together - A web application which enables watching youtube videos together and communicate over text chat
+Built with the React, MongoDB, Express, Node.js
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Features
+- Room functionality
+- Synchronised video playback
+- Communicate via text chat
 
-Currently, two official plugins are available:
+## Getting started
+This is the frontend repository, you also need backend repository code to run this locally. You can find it [here](https://github.com/rajcantcode/Mp4Together-server.git)
+To run this project locally, run 
+`git clone https://github.com/rajcantcode/Mp4Together-client.git`
+`npm install`
+`npm run dev`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+and copy the .env.example variables into a separate .env file:
