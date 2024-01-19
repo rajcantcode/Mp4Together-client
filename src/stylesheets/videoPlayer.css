@@ -1,0 +1,11 @@
+iframe.vds-youtube[data-no-controls] {
+  width: 100% !important;
+  height: 100% !important;
+}
+.vds-blocker {
+  display: none;
+}
+#video-container > div:first-child {
+  width: 100% !important;
+  height: 100% !important;
+}

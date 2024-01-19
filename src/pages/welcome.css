@@ -1,0 +1,71 @@
+/* body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f0f0;
+} */
+
+.container {
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.welcome-text {
+  font-size: 32px;
+  color: #007bff;
+  margin-bottom: 20px;
+}
+
+.buttons-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.btn {
+  margin: 10px;
+  padding: 10px;
+  font-size: 18px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 200px; /* Set the same width for all buttons */
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.register-btn {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.login-btn {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.guest-btn {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.btn:hover {
+  filter: brightness(1.2);
+}
+
+/* @media (max-width: 768px) {
+  .welcome-text {
+    font-size: 24px;
+  }
+  .btn {
+    font-size: 16px;
+  }
+  .btn {
+    width: 150px; Adjust the width for smaller screens 
+  }
+} */

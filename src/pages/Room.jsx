@@ -1,0 +1,427 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { authenticateUser } from "../../services/helpers";
+import {
+  setEmail,
+  setIsAdmin,
+  setUserRoomId,
+  setUserSocketRoomId,
+  setUsername,
+} from "../store/userSlice";
+import {
+  setRoomId,
+  setSocketRoomId,
+  setRoomMembers,
+  setRoomAdmins,
+} from "../store/roomSlice";
+import Header from "../components/Header";
+import LoadingButton from "@mui/lab/LoadingButton";
+import { Box } from "@mui/material";
+import { styled } from "@mui/joy/styles";
+import Input from "@mui/joy/Input";
+import SendIcon from "@mui/icons-material/Send";
+import { joinSocketRoom, socket } from "../socket/socketUtils";
+import axios from "axios";
+import {
+  setVideoId,
+  setVideoStartTime,
+  setVideoUrl,
+  setVideoUrlValidity,
+} from "../store/videoUrlSlice";
+
+// import "./Room.css";
+
+const StyledInput = styled("input")({
+  border: "none", // remove the native input border
+  minWidth: 0, // remove the native input width
+  outline: 0, // remove the native input outline
+  padding: 0, // remove the native input padding
+  paddingTop: "1em",
+  flex: 1,
+  color: "inherit",
+  backgroundColor: "transparent",
+  fontFamily: "inherit",
+  fontSize: "inherit",
+  fontStyle: "inherit",
+  fontWeight: "inherit",
+  lineHeight: "inherit",
+  textOverflow: "ellipsis",
+  "&::placeholder": {
+    opacity: 0,
+    transition: "0.1s ease-out",
+  },
+  "&:focus::placeholder": {
+    opacity: 1,
+  },
+  "&:focus ~ label, &:not(:placeholder-shown) ~ label, &:-webkit-autofill ~ label":
+    {
+      top: "0.5rem",
+      fontSize: "0.75rem",
+    },
+  "&:focus ~ label": {
+    color: "var(--Input-focusedHighlight)",
+  },
+  "&:-webkit-autofill": {
+    alignSelf: "stretch", // to fill the height of the root slot
+  },
+  "&:-webkit-autofill:not(* + &)": {
+    marginInlineStart: "calc(-1 * var(--Input-paddingInline))",
+    paddingInlineStart: "var(--Input-paddingInline)",
+    borderTopLeftRadius:
+      "calc(var(--Input-radius) - var(--variant-borderWidth, 0px))",
+    borderBottomLeftRadius:
+      "calc(var(--Input-radius) - var(--variant-borderWidth, 0px))",
+  },
+});
+
+const StyledLabel = styled("label")(({ theme }) => ({
+  position: "absolute",
+  lineHeight: 1,
+  top: "calc((var(--Input-minHeight) - 1em) / 2)",
+  color: theme.vars.palette.text.tertiary,
+  fontWeight: theme.vars.fontWeight.md,
+  transition: "all 150ms cubic-bezier(0.4, 0, 0.2, 1)",
+}));
+
+const InnerInput = React.forwardRef(function InnerInput(props, ref) {
+  const id = React.useId();
+  return (
+    <React.Fragment>
+      <StyledInput {...props} ref={ref} id={id} />
+      <StyledLabel htmlFor={id}>Enter room Link or Id</StyledLabel>
+    </React.Fragment>
+  );
+});
+
+const Room = () => {
+  if (socket.disconnected) socket.connect();
+  const dispatch = useDispatch();
+  const [isLoading, setIsLoading] = useState(true); // State to track loading status
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await authenticateUser(dispatch);
+        if (response.status === 401 || response.status === 403)
+          navigate("/login");
+        setIsLoading(false);
+      } catch (error) {
+        // Handle server error here
+        console.error(error);
+      }
+    })();
+  }, []);
+  const [showJoinInput, setShowJoinInput] = useState(false);
+
+  // State variables to handle loading and disable of create room button
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createDisabled, setCreateDisabled] = useState(false);
+
+  // State variables to handle loading and disable of join room button
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [joinDisabled, setJoinDisabled] = useState(false);
+
+  //   State variable to handle disabling of join submit button
+  const [joinBtnDisabled, setJoinBtnDisabled] = useState(false);
+
+  //   Room link input
+  const [roomLink, setRoomLink] = useState("");
+
+  //   Set error mesaage state variable
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const navigate = useNavigate();
+  const username = useSelector((state) => state.userInfo.username);
+
+  const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
+  const toggleJoinInput = () => {
+    setShowJoinInput(!showJoinInput);
+  };
+
+  const handleRoomLinkChange = (e) => {
+    setRoomLink(e.target.value);
+  };
+
+  // Implement the logic for creating a room here
+  const createRoom = async () => {
+    setCreateLoading(true);
+    setJoinDisabled(true);
+    setJoinBtnDisabled(true);
+    try {
+      const response = await axios(`${baseUrl}/room/create`, {
+        method: "post",
+        withCredentials: true,
+        validateStatus: function (status) {
+          //Consider any status code less than 500 as a success
+          return status >= 200 && status < 500;
+        },
+      });
+
+      const resData = response.data;
+
+      if (response.status !== 200) {
+        if (response.status === 401 || response.status === 403) {
+          setErrorMsg(`${resData.msg}, you will be redirected to login page`);
+          setTimeout(() => {
+            setErrorMsg("");
+            navigate("/login");
+          }, 2000);
+        } else if (response.status === 404) {
+          setErrorMsg(
+            `${resData.msg}, you will be redirected to register page`
+          );
+          setTimeout(() => {
+            setErrorMsg("");
+            navigate("/register");
+          }, 2000);
+        }
+      }
+      if (response.status === 200) {
+        const { roomId, socketRoomId, members, admins } = resData;
+        joinSocketRoom(socketRoomId, socket, username);
+        dispatch(setUserRoomId(roomId));
+        dispatch(setRoomId(roomId));
+
+        dispatch(setUserSocketRoomId(socketRoomId));
+        dispatch(setSocketRoomId(socketRoomId));
+
+        dispatch(setRoomMembers(members));
+        dispatch(setRoomAdmins(admins));
+
+        // Since the user created the room, they are the admin
+        dispatch(setIsAdmin(true));
+
+        // socket.emit("join-room", { room: socketRoomId, username: username, mainRoomId: roomId});
+        navigate(`/room/${roomId}`);
+      }
+    } catch (error) {
+      // ToDo -> Handle server errrors
+      console.error(error);
+    }
+    setCreateLoading(false);
+    setJoinDisabled(false);
+    setJoinBtnDisabled(false);
+  };
+
+  const joinRoom = async () => {
+    // Implement the logic for joining a room with the roomLink
+
+    // Regex to validate room link
+    const frontendUrl = import.meta.env.VITE_FRONTEND_URL;
+    const validPattern1 = new RegExp(
+      `^http://${frontendUrl}/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
+    );
+    const validPattern2 = new RegExp(
+      `^${frontendUrl}/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
+    );
+    // Remove the dev pattern when building project
+    const validPatternDev = new RegExp(
+      `^http://localhost:5173/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
+    );
+    const validPatternProd = new RegExp(
+      `^https://${frontendUrl}/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
+    );
+    const validPattern3 = new RegExp(`^[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`);
+
+    if (
+      validPattern1.test(roomLink) ||
+      validPattern2.test(roomLink) ||
+      validPattern3.test(roomLink) ||
+      validPatternDev.test(roomLink) ||
+      validPatternProd.test(roomLink)
+    ) {
+      // Define a regular expression pattern to match the three words
+      const pattern = /([\w-]+-[\w-]+-[\w-]+)$/;
+      // Use the regular expression to extract the words
+      const match = roomLink.match(pattern);
+      // The captured group at index 1 contains the three words
+      const reqRoomId = match[1];
+
+      // Make api call to join room
+      const response = await axios(`${baseUrl}/room/join/${reqRoomId}`, {
+        method: "post",
+        withCredentials: true,
+        validateStatus: function (status) {
+          // Consider any status code less than 500 as a success
+          return status >= 200 && status < 500;
+        },
+      });
+      const resData = response.data;
+      if (response.status !== 200) {
+        if (response.status === 404) {
+          setErrorMsg(`${resData.msg}`);
+          return;
+        } else if (response.status === 401 || response.status === 403) {
+          setErrorMsg(`${resData.msg}, you will be redirected to login page`);
+          setTimeout(() => {
+            setErrorMsg("");
+            navigate("/login");
+          }, 2000);
+          return;
+        }
+      }
+      if (response.status === 200) {
+        const {
+          roomId,
+          socketRoomId,
+          members,
+          admins,
+          username,
+          email,
+          videoUrl,
+        } = resData;
+
+        joinSocketRoom(socketRoomId, socket, username);
+        dispatch(setUserRoomId(roomId));
+        dispatch(setRoomId(roomId));
+        dispatch(setRoomMembers(members));
+        dispatch(setRoomAdmins(admins));
+
+        dispatch(setUserSocketRoomId(socketRoomId));
+        dispatch(setSocketRoomId(socketRoomId));
+        dispatch(setUsername(username));
+        dispatch(setEmail(email));
+
+        socket.once("timestamp", ({ timestamp }) => {
+          if (!videoUrl || videoUrl === "") {
+            setErrorMsg("");
+            setRoomLink("");
+            navigate(`/room/${roomId}`);
+            return;
+          }
+          dispatch(setVideoStartTime(timestamp));
+          dispatch(setVideoUrl(videoUrl));
+          dispatch(setVideoId(videoUrl ? videoUrl.split("/embed/")[1] : 0));
+          dispatch(setVideoUrlValidity(true));
+        });
+        socket.emit("join-room", {
+          room: socketRoomId,
+          username: username,
+          mainRoomId: roomId,
+          admin: admins[0],
+        });
+
+        setErrorMsg("");
+        setRoomLink("");
+
+        navigate(`/room/${roomId}`);
+      }
+    } else {
+      // Display error message
+      setErrorMsg("Invalid room link or code");
+    }
+  };
+
+  return (
+    <div className="room-container">
+      {isLoading ? ( // Render the modal if isLoading is true
+        <div className="modal">
+          <div className="spinner"></div>
+          <p>Authenticating user, please wait...</p>
+        </div>
+      ) : (
+        <>
+          <Header />
+          <Box
+            className="room-modal"
+            sx={{
+              minWidth: { xs: "85%", md: "50%" },
+              padding: "15px",
+              textAlign: "center",
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <LoadingButton
+              size="small"
+              color="success"
+              onClick={createRoom}
+              loading={createLoading}
+              disabled={createDisabled}
+              variant="contained"
+              sx={{
+                margin: "10px",
+                display: "block",
+                minHeight: "56px",
+                width: "70%",
+              }}
+            >
+              <span>Create New Room</span>
+            </LoadingButton>
+            {!showJoinInput && <p style={{ color: "red" }}>{errorMsg}</p>}
+            <LoadingButton
+              size="small"
+              onClick={toggleJoinInput}
+              loading={joinLoading}
+              disabled={joinDisabled}
+              variant="contained"
+              sx={{
+                margin: "10px",
+                display: "block",
+                minHeight: "56px",
+                width: "70%",
+              }}
+            >
+              <span>Join a room</span>
+            </LoadingButton>
+            {showJoinInput && (
+              <>
+                <Box
+                  className="join-room-input-container"
+                  width="70%"
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Input
+                    slots={{ input: InnerInput }}
+                    slotProps={{
+                      input: {
+                        placeholder: `https://websiteUrl/unique-room-id`,
+                        type: "text",
+                      },
+                    }}
+                    sx={{
+                      "--Input-minHeight": "56px",
+                      "--Input-radius": "6px",
+                      width: "90%",
+                      margin: "10px",
+                    }}
+                    value={roomLink}
+                    onChange={handleRoomLinkChange}
+                  />
+                  <button
+                    className="send-room-link"
+                    style={{
+                      height: "56px",
+                      width: "10%",
+                      cursor: "pointer",
+                      border: "none",
+                      background: "white",
+                      borderRadius: "8px",
+                    }}
+                    onClick={joinRoom}
+                    disabled={joinBtnDisabled}
+                  >
+                    <SendIcon sx={{ fontSize: "medium" }} />
+                  </button>
+                </Box>
+                <p style={{ color: "red" }}>{errorMsg}</p>
+              </>
+            )}
+          </Box>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default Room;
