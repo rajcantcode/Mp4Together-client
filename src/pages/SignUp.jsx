@@ -99,53 +99,53 @@ export default function SignUp() {
     event.preventDefault();
     const baseUrl = import.meta.env.VITE_BACKEND_URL;
     const data = new FormData(event.currentTarget);
-    if (
-      validateUserData(
-        data.get("email"),
-        data.get("password"),
-        data.get("username")
-      )
-    ) {
-      // Make request to create new User
-      const userInfo = {
-        email: data.get("email"),
-        password: data.get("password"),
-        username: data.get("username"),
-      };
+    const email = data.get("email");
+    const password = data.get("password");
+    const username = data.get("username");
 
-      try {
-        const response = await axios.post(`${baseUrl}/auth/signup`, userInfo, {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          validateStatus: function (status) {
-            // Consider any status code less than 500 as a success
-            return status >= 200 && status < 500;
-          },
-        });
+    if (!validateUserData(email, password, username)) {
+      return;
+    }
 
-        // Check for username or email already exists
-        if (response.status === 409) {
-          const resData = response.data;
-          if (resData.msg === "Username is already taken") {
-            setSignUpErrMsg((state) => {
-              return { ...state, usernameErr: "Username is already taken" };
-            });
-          } else {
-            setSignUpErrMsg((state) => {
-              return { ...state, emailErr: "Email is already registered" };
-            });
-          }
+    // Make request to create new User
+    const userInfo = {
+      email,
+      password,
+      username,
+    };
+
+    try {
+      const response = await axios.post(`${baseUrl}/auth/signup`, userInfo, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        validateStatus: function (status) {
+          // Consider any status code less than 500 as a success
+          return status >= 200 && status < 500;
+        },
+      });
+
+      // Check for username or email already exists
+      if (response.status === 409) {
+        const resData = response.data;
+        if (resData.msg === "Username is already taken") {
+          setSignUpErrMsg((state) => {
+            return { ...state, usernameErr: "Username is already taken" };
+          });
+        } else {
+          setSignUpErrMsg((state) => {
+            return { ...state, emailErr: "Email is already registered" };
+          });
         }
-        // To do - set up error handling for '501' error, (internal server error)
-        else {
-          setSignUpErrMsg({ emailErr: "", passwordErr: "", usernameErr: "" });
-          navigate("/login");
-        }
-      } catch (error) {
-        console.error(error);
       }
+      // To do - set up error handling for '501' error, (internal server error)
+      else {
+        setSignUpErrMsg({ emailErr: "", passwordErr: "", usernameErr: "" });
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
