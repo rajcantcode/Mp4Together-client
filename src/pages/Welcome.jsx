@@ -15,10 +15,11 @@ const Welcome = () => {
         const response = await authenticateUser(dispatch);
         if (response.status === 200) navigate("/room");
         else if (response.status === 403) navigate("/login");
-        setIsLoading(false);
       } catch (error) {
         // Handle server error here
         console.error(error);
+      } finally {
+        setIsLoading(false);
       }
     })();
   }, []);
