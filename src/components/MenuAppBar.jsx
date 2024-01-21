@@ -14,6 +14,8 @@ import PlayCircleFilledIcon from "@mui/icons-material/PlayCircleFilled";
 import LoadingButton from "@mui/lab/LoadingButton";
 import FileCopyIcon from "@mui/icons-material/FileCopy";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import Snackbar from "@mui/joy/Snackbar";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -27,15 +29,18 @@ import {
   setUserSocketRoomId,
 } from "../store/userSlice";
 
-import { socket } from "../socket/socketUtils";
+import { getSocket } from "../socket/socketUtils";
 import { resetRoomSlice, resetVideoSlice } from "../../services/helpers";
+import { useState } from "react";
 
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
 
 function MenuAppBar() {
-  const [anchorElNav, setAnchorElNav] = React.useState(null);
-  const [anchorElUser, setAnchorElUser] = React.useState(null);
-  const [exitLoading, setExitLoading] = React.useState(false);
+  const socket = getSocket();
+  const [anchorElNav, setAnchorElNav] = useState(null);
+  const [anchorElUser, setAnchorElUser] = useState(null);
+  const [exitLoading, setExitLoading] = useState(false);
+  const [isServerError, setIsServerError] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -48,7 +53,7 @@ function MenuAppBar() {
 
   useEffect(() => {
     // I have to implement the functionality wher if user closes the tab or refreshes the tab, they are exitted from room, I have tried many ways, but none of them work well.
-    // So leaving this commented mess here :)
+    // So leaving this commented mess here 🥲)
     const handleBeforeUnload = (event) => {
       // if (window.performance.getEntriesByType("navigation")[0].type === "reload") {
       //     event.preventDefault();
@@ -99,6 +104,10 @@ function MenuAppBar() {
     setAnchorElUser(null);
   };
 
+  const handleSnackbarClose = () => {
+    setIsServerError(false);
+  };
+
   const exitRoom = async () => {
     try {
       setExitLoading(true);
@@ -116,7 +125,7 @@ function MenuAppBar() {
       const resData = response.data;
       if (response.status !== 200) {
         if (response.status === 404) {
-          console.log("404 error", resData.msg);
+          throw new Error(`${resData.msg}`);
         }
       }
       if (response.status === 200) {
@@ -135,6 +144,7 @@ function MenuAppBar() {
         navigate("/room");
       }
     } catch (error) {
+      setIsServerError(true);
       console.error(error);
     } finally {
       setExitLoading(false);
@@ -149,23 +159,51 @@ function MenuAppBar() {
   };
 
   return (
-    <AppBar position="static">
-      <Container maxWidth="xl" sx={{ padding: { xs: "0 4px", md: "0 16px" } }}>
-        <Toolbar disableGutters sx={{ justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
+    <>
+      <AppBar position="static">
+        <Container
+          maxWidth="xl"
+          sx={{ padding: { xs: "0 4px", md: "0 16px" } }}
+        >
+          <Toolbar disableGutters sx={{ justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <PlayCircleFilledIcon
+                fontSize="large"
+                sx={{ display: { xs: "none", md: "flex" }, mr: 1 }}
+              />
+              <Typography
+                variant="h6"
+                noWrap
+                component="a"
+                href="/"
+                sx={{
+                  mr: 2,
+                  display: { xs: "none", md: "flex" },
+                  fontFamily: "monospace",
+                  fontWeight: 700,
+                  letterSpacing: { xs: ".2rem", md: ".3rem" },
+                  color: "inherit",
+                  textDecoration: "none",
+                }}
+              >
+                Mp4ToGether
+              </Typography>
+            </Box>
+
             <PlayCircleFilledIcon
-              fontSize="large"
-              sx={{ display: { xs: "none", md: "flex" }, mr: 1 }}
+              sx={{ display: { xs: "flex", md: "none" }, mr: 1 }}
             />
             <Typography
-              variant="h6"
+              variant="h5"
               noWrap
               component="a"
               href="/"
               sx={{
                 mr: 2,
-                display: { xs: "none", md: "flex" },
+                display: { xs: "flex", md: "none" },
+                flexGrow: 1,
                 fontFamily: "monospace",
+                fontSize: 18,
                 fontWeight: 700,
                 letterSpacing: { xs: ".2rem", md: ".3rem" },
                 color: "inherit",
@@ -174,99 +212,93 @@ function MenuAppBar() {
             >
               Mp4ToGether
             </Typography>
-          </Box>
+            {/* small screen UI design end */}
 
-          <PlayCircleFilledIcon
-            sx={{ display: { xs: "flex", md: "none" }, mr: 1 }}
-          />
-          <Typography
-            variant="h5"
-            noWrap
-            component="a"
-            href="/"
-            sx={{
-              mr: 2,
-              display: { xs: "flex", md: "none" },
-              flexGrow: 1,
-              fontFamily: "monospace",
-              fontSize: 18,
-              fontWeight: 700,
-              letterSpacing: { xs: ".2rem", md: ".3rem" },
-              color: "inherit",
-              textDecoration: "none",
-            }}
-          >
-            Mp4ToGether
-          </Typography>
-          {/* small screen UI design end */}
-
-          <Box
-            sx={{
-              display: "flex",
-              width: { xs: "40%", md: "fit-content" },
-              justifyContent: "space-between",
-            }}
-          >
-            <Tooltip title="Copy room link">
-              <IconButton>
-                <FileCopyIcon
-                  sx={{ color: "yellow", margin: { xs: 0, md: "0 10px" } }}
-                  onClick={copyRoomLink}
-                />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Exit room">
-              <LoadingButton
-                size="small"
-                color="error"
-                onClick={exitRoom}
-                loading={exitLoading}
-                loadingPosition="start"
-                startIcon={<ExitToAppIcon />}
-                variant="contained"
-                sx={{
-                  display: "inline-flex",
-                  minWidth: "30px",
-                  margin: { xs: 0, md: "0 10px" },
-                }}
-              >
-                <Typography sx={{ display: { xs: "none", md: "inline" } }}>
-                  Exit Room
-                </Typography>
-              </LoadingButton>
-            </Tooltip>
-            <Tooltip title="Open settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                {/* Use this to change profile photo */}
-                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-              </IconButton>
-            </Tooltip>
-            <Menu
-              sx={{ mt: "45px" }}
-              id="menu-appbar"
-              anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: "top",
-                horizontal: "right",
+            <Box
+              sx={{
+                display: "flex",
+                width: { xs: "40%", md: "fit-content" },
+                justifyContent: "space-between",
               }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
             >
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography textAlign="center">{setting}</Typography>
-                </MenuItem>
-              ))}
-            </Menu>
-          </Box>
-        </Toolbar>
-      </Container>
-    </AppBar>
+              <Tooltip title="Copy room link">
+                <IconButton>
+                  <FileCopyIcon
+                    sx={{ color: "yellow", margin: { xs: 0, md: "0 10px" } }}
+                    onClick={copyRoomLink}
+                  />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Exit room">
+                <LoadingButton
+                  size="small"
+                  color="error"
+                  onClick={exitRoom}
+                  loading={exitLoading}
+                  loadingPosition="start"
+                  startIcon={<ExitToAppIcon />}
+                  variant="contained"
+                  sx={{
+                    display: "inline-flex",
+                    minWidth: "30px",
+                    margin: { xs: 0, md: "0 10px" },
+                  }}
+                >
+                  <Typography sx={{ display: { xs: "none", md: "inline" } }}>
+                    Exit Room
+                  </Typography>
+                </LoadingButton>
+              </Tooltip>
+              <Tooltip title="Open settings">
+                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                  {/* Use this to change profile photo */}
+                  <Avatar
+                    alt={username.charAt(0).toUpperCase() + username.slice(1)}
+                    src="/static/images/avatar/2.jpg"
+                  />
+                </IconButton>
+              </Tooltip>
+              <Menu
+                sx={{ mt: "45px" }}
+                id="menu-appbar"
+                anchorEl={anchorElUser}
+                anchorOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                open={Boolean(anchorElUser)}
+                onClose={handleCloseUserMenu}
+              >
+                {settings.map((setting) => (
+                  <MenuItem key={setting} onClick={handleCloseUserMenu}>
+                    <Typography textAlign="center">{setting}</Typography>
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Box>
+          </Toolbar>
+        </Container>
+      </AppBar>
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        autoHideDuration={3000}
+        open={isServerError}
+        color="danger"
+        variant="solid"
+        onClose={handleSnackbarClose}
+        startDecorator={<ErrorOutlineIcon />}
+      >
+        <div>
+          <p>Unable to exit room</p>
+          <p>Please try again later</p>
+        </div>
+      </Snackbar>
+    </>
   );
 }
 export default MenuAppBar;

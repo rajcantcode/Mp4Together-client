@@ -17,7 +17,9 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-
+import Snackbar from "@mui/joy/Snackbar";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import { useState } from "react";
 function Copyright(props) {
   return (
     <Typography
@@ -44,7 +46,10 @@ export default function SignIn() {
   const errorRef = useRef(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  const [isServerError, setIsServerError] = useState(false);
+  const handleSnackbarClose = () => {
+    setIsServerError(false);
+  };
   const handleSubmit = async (event) => {
     event.preventDefault();
     const baseUrl = import.meta.env.VITE_BACKEND_URL;
@@ -75,7 +80,6 @@ export default function SignIn() {
           errorRef.current.textContent = resData.msg;
           errorRef.current.style.display = "block";
         }
-        // ToDo -> Handle Internal server error
       } else {
         const { username, email } = resData;
         dispatch(setUsername(username));
@@ -85,6 +89,7 @@ export default function SignIn() {
         navigate(`/room`);
       }
     } catch (error) {
+      setIsServerError(true);
       console.error(error);
     }
   };
@@ -165,6 +170,20 @@ export default function SignIn() {
           <Copyright sx={{ mt: 8, mb: 4 }} />
         </Container>
       </ThemeProvider>
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        autoHideDuration={3000}
+        open={isServerError}
+        color="danger"
+        variant="solid"
+        onClose={handleSnackbarClose}
+        startDecorator={<ErrorOutlineIcon />}
+      >
+        <div>
+          <p>There was an error processing your request</p>
+          <p>Please try again later</p>
+        </div>
+      </Snackbar>
     </>
   );
 }

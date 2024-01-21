@@ -4,6 +4,8 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import Snackbar from "@mui/joy/Snackbar";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -12,22 +14,21 @@ import {
   setVideoStartTime,
   setVideoUrl,
 } from "../store/videoUrlSlice";
-import { socket } from "../socket/socketUtils";
+import { getSocket } from "../socket/socketUtils";
 import axios, { AxiosError } from "axios";
 import { resetVideoSlice } from "../../services/helpers";
 import { useParams } from "react-router-dom";
 
 export default function LinkInput() {
+  const socket = getSocket();
   const [inpVideoUrl, setInpVideoUrl] = useState("");
   const { isAdmin } = useSelector((state) => state.userInfo);
-  // unable to accesss roomID from redux useSelector
-  // const { roomID } = useSelector((state) => {
-  //   console.log(JSON.stringify(state.roomInfo));
-  //   return state.roomInfo;
-  // });
+
   const { roomId } = useParams();
   const { socketRoomId } = useSelector((state) => state.roomInfo);
   const dispatch = useDispatch();
+  const [isServerError, setIsServerError] = useState(false);
+  const [serverErrorMessage, setServerErrorMessage] = useState("");
 
   useEffect(() => {
     const handleNewVideoUrl = ({ videoUrl, videoId, startTime }) => {
@@ -42,6 +43,9 @@ export default function LinkInput() {
     };
   }, [socket]);
 
+  const handleSnackbarClose = () => {
+    setIsServerError(false);
+  };
   const validateVideoUrl = async (url) => {
     try {
       const baseUrl = import.meta.env.VITE_BACKEND_URL;
@@ -102,14 +106,15 @@ export default function LinkInput() {
       resetVideoSlice(dispatch);
       console.log("#### Error at validateVideoUrl function ####");
       if (error instanceof AxiosError && error.code === "ERR_BAD_REQUEST") {
-        // Display modal that the URL is invalid
-        console.log(error);
-        console.log("No such video exists");
+        // Display toast that the URL is invalid
+        setIsServerError(true);
+        setServerErrorMessage("No such Video exists");
         return;
       }
       if (error instanceof Error) {
-        // Display modal with message received from server
-        console.log(error.message);
+        // Display toast with message received from server
+        setIsServerError(true);
+        setServerErrorMessage(error.message);
         return;
       }
       console.log(error);
@@ -117,38 +122,56 @@ export default function LinkInput() {
   };
 
   return (
-    <Stack
-      component="form"
-      direction="row"
-      alignItems={"center"}
-      justifyContent={"space-evenly"}
-      sx={{ width: "100%", height: "100px", backgroundColor: "orange" }}
-      onSubmit={(e) => {
-        e.preventDefault();
-        const textfieldEl = e.target.firstChild.children[1].firstChild;
-        textfieldEl.value = "";
-        validateVideoUrl(inpVideoUrl);
-      }}
-    >
-      <TextField
-        id="outlined-basic"
-        label="Enter the link of youtube video"
-        disabled={!isAdmin}
-        variant="outlined"
-        autoComplete="off"
-        sx={{ minWidth: { md: "85%", xs: "70%" }, margin: "20px 0" }}
-        onChange={(e) => {
-          setInpVideoUrl(e.target.value);
+    <>
+      <Stack
+        component="form"
+        direction="row"
+        alignItems={"center"}
+        justifyContent={"space-evenly"}
+        sx={{ width: "100%", height: "100px", backgroundColor: "orange" }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          const textfieldEl = e.target.firstChild.children[1].firstChild;
+          textfieldEl.value = "";
+          validateVideoUrl(inpVideoUrl);
         }}
-      />
-      <Button
-        type="submit"
-        variant="contained"
-        disabled={!isAdmin}
-        sx={{ minWidth: "40px", height: "40px", margin: "20px 0", padding: 0 }}
       >
-        <ArrowForwardIcon />
-      </Button>
-    </Stack>
+        <TextField
+          id="outlined-basic"
+          label="Enter the link of youtube video"
+          disabled={!isAdmin}
+          variant="outlined"
+          autoComplete="off"
+          sx={{ minWidth: { md: "85%", xs: "70%" }, margin: "20px 0" }}
+          onChange={(e) => {
+            setInpVideoUrl(e.target.value);
+          }}
+        />
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={!isAdmin}
+          sx={{
+            minWidth: "40px",
+            height: "40px",
+            margin: "20px 0",
+            padding: 0,
+          }}
+        >
+          <ArrowForwardIcon />
+        </Button>
+      </Stack>
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        autoHideDuration={3000}
+        open={isServerError}
+        color="danger"
+        variant="solid"
+        onClose={handleSnackbarClose}
+        startDecorator={<ErrorOutlineIcon />}
+      >
+        <div>{serverErrorMessage}</div>
+      </Snackbar>
+    </>
   );
 }

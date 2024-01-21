@@ -12,6 +12,8 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import Snackbar from "@mui/joy/Snackbar";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 import axios from "axios";
 
@@ -47,6 +49,11 @@ export default function SignUp() {
     passwordErr: "",
     usernameErr: "",
   });
+
+  const [isServerError, setIsServerError] = useState(false);
+  const handleSnackbarClose = () => {
+    setIsServerError(false);
+  };
 
   function validateUserData(email, password, username) {
     setSignUpErrMsg({ emailErr: "", passwordErr: "", usernameErr: "" });
@@ -138,13 +145,12 @@ export default function SignUp() {
             return { ...state, emailErr: "Email is already registered" };
           });
         }
-      }
-      // To do - set up error handling for '501' error, (internal server error)
-      else {
+      } else {
         setSignUpErrMsg({ emailErr: "", passwordErr: "", usernameErr: "" });
         navigate("/login");
       }
     } catch (error) {
+      setIsServerError(true);
       console.error(error);
     }
   };
@@ -256,6 +262,20 @@ export default function SignUp() {
           <Copyright sx={{ mt: 5 }} />
         </Container>
       </ThemeProvider>
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        autoHideDuration={3000}
+        open={isServerError}
+        color="danger"
+        variant="solid"
+        onClose={handleSnackbarClose}
+        startDecorator={<ErrorOutlineIcon />}
+      >
+        <div>
+          <p>There was an error processing your request</p>
+          <p>Please try again later</p>
+        </div>
+      </Snackbar>
     </>
   );
 }
