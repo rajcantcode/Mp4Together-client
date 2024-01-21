@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import "../stylesheets/videoPlayer.css";
 // Base styles for media player and provider (~400B).
 import ReactPlayer from "react-player/youtube";
-import { socket } from "../socket/socketUtils";
+import { getSocket } from "../socket/socketUtils";
 
 // Default behaviour -
 // Admin will cotrol the video, ie : if admin pauses the videos of other members also pauses and if admin skips forward ....
@@ -13,7 +13,10 @@ import { socket } from "../socket/socketUtils";
 // Once enabled, other members can only pause or play the video on their side.
 
 const VideoPlayer = () => {
-  const { videoId, videoUrl } = useSelector((state) => state.videoUrl);
+  const socket = getSocket();
+  const { videoId, videoUrl, startTime } = useSelector(
+    (state) => state.videoUrl
+  );
   const { socketRoomId, admins } = useSelector((state) => state.roomInfo);
   const { isAdmin, username } = useSelector((state) => state.userInfo);
 
@@ -47,9 +50,6 @@ const VideoPlayer = () => {
       socket.off("timestamp", handleTimestamp);
     };
   }, []);
-
-  const { startTime } = useSelector((state) => state.videoUrl);
-
   const handlePauseEvent = (data) => {
     setExecuteHandlePauseVideo(false);
     setIsPlaying(false);
@@ -123,7 +123,7 @@ const VideoPlayer = () => {
       onError={handleError}
       onPlay={handlePlayVideo}
       onPause={handlePauseVideo}
-      controls={true}
+      controls={isAdmin}
       config={{
         youtube: {
           playerVars: {
