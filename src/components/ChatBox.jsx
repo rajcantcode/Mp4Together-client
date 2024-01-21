@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Box } from "@mui/material";
-// @ts-nocheck
-import global from "global";
-import * as process from "process";
-global.process = process;
 
 // Chatscope imports
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
@@ -22,7 +18,7 @@ import {
 } from "@chatscope/chat-ui-kit-react";
 
 // Socket.io import
-import { socket } from "../socket/socketUtils";
+import { getSocket } from "../socket/socketUtils";
 import { sendMessage } from "../socket/socketUtils";
 
 // Redux imports
@@ -38,6 +34,7 @@ const ChatBox = () => {
   const username = useSelector((state) => state.userInfo.username);
   const members = useSelector((state) => state.roomInfo.members);
 
+  const socket = getSocket();
   const dispatch = useDispatch();
   socket.on("connect_error", (error) => {
     console.error("Connection error:", error);
@@ -192,4 +189,3 @@ const ChatBox = () => {
 };
 
 export default ChatBox;
-console.log("ahahaha feature branch");

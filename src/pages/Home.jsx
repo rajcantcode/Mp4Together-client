@@ -18,7 +18,7 @@ import Container from "@mui/material/Container";
 import MenuAppBar from "../components/MenuAppBar";
 import LinkInput from "../components/LinkInput";
 import Interactive from "../components/Interactive";
-import { joinSocketRoom, socket } from "../socket/socketUtils";
+import { joinSocketRoom, getSocket } from "../socket/socketUtils";
 import { fetchUser } from "../../services/helpers";
 import {
   setVideoId,
@@ -35,13 +35,12 @@ import {
 // To determine the way in which user is accessing the component, we check if the username is set or not in redux store. If it is not set then we make the joinRoom request
 
 const Home = () => {
+  const socket = getSocket();
   const [isValidUser, setIsValidUser] = useState(true);
   const params = useParams();
   const dispatch = useDispatch();
   const errorRef = useRef(null);
-  const isRoomIdSet = useSelector((state) => state.roomInfo.roomId);
   const { username } = useSelector((state) => state.userInfo);
-  const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     if (username === "") {
@@ -114,11 +113,18 @@ const Home = () => {
           <Interactive />
         </Container>
       ) : (
-        <div className="error-modal">
+        <div className="flex items-center justify-center h-screen">
           <h1 ref={errorRef}>
             Unauthorized user <br></br>
-            Please visit the <Link to="/register">register</Link> or{" "}
-            <Link to="/login">login</Link> page, to authenticate yourself
+            Please visit the{" "}
+            <Link className="underline" to="/register">
+              register
+            </Link>{" "}
+            or{" "}
+            <Link className="underline" to="/login">
+              login
+            </Link>{" "}
+            page, to authenticate yourself
           </h1>
         </div>
       )}

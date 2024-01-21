@@ -21,7 +21,7 @@ import { Box } from "@mui/material";
 import { styled } from "@mui/joy/styles";
 import Input from "@mui/joy/Input";
 import SendIcon from "@mui/icons-material/Send";
-import { joinSocketRoom, socket } from "../socket/socketUtils";
+import { joinSocketRoom, getSocket } from "../socket/socketUtils";
 import axios from "axios";
 import {
   setVideoId,
@@ -95,7 +95,7 @@ const InnerInput = React.forwardRef(function InnerInput(props, ref) {
 });
 
 const Room = () => {
-  if (socket.disconnected) socket.connect();
+  const socket = getSocket();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true); // State to track loading status
   useEffect(() => {
@@ -107,6 +107,7 @@ const Room = () => {
         setIsLoading(false);
       } catch (error) {
         // Handle server error here
+        navigate("/login");
         console.error(error);
       }
     })();
@@ -127,7 +128,7 @@ const Room = () => {
   //   Room link input
   const [roomLink, setRoomLink] = useState("");
 
-  //   Set error mesaage state variable
+  //   Set error message state variable
   const [errorMsg, setErrorMsg] = useState("");
 
   const navigate = useNavigate();
@@ -161,13 +162,16 @@ const Room = () => {
       const resData = response.data;
 
       if (response.status !== 200) {
+        // Token not provided or invalid token
         if (response.status === 401 || response.status === 403) {
           setErrorMsg(`${resData.msg}, you will be redirected to login page`);
           setTimeout(() => {
             setErrorMsg("");
             navigate("/login");
           }, 2000);
-        } else if (response.status === 404) {
+        }
+        // No such user exists
+        if (response.status === 404) {
           setErrorMsg(
             `${resData.msg}, you will be redirected to register page`
           );
@@ -176,6 +180,7 @@ const Room = () => {
             navigate("/register");
           }, 2000);
         }
+        return;
       }
       if (response.status === 200) {
         const { roomId, socketRoomId, members, admins } = resData;
@@ -192,11 +197,11 @@ const Room = () => {
         // Since the user created the room, they are the admin
         dispatch(setIsAdmin(true));
 
-        // socket.emit("join-room", { room: socketRoomId, username: username, mainRoomId: roomId});
         navigate(`/room/${roomId}`);
       }
     } catch (error) {
       // ToDo -> Handle server errrors
+
       console.error(error);
     }
     setCreateLoading(false);
