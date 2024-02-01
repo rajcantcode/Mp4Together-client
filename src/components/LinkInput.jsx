@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import Tooltip from "@mui/material/Tooltip";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Snackbar from "@mui/joy/Snackbar";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
@@ -14,7 +15,7 @@ import {
   setVideoStartTime,
   setVideoUrl,
 } from "../store/videoUrlSlice";
-import { getSocket } from "../socket/socketUtils";
+import { getSocket } from "../socket/socketUtils.js";
 import axios, { AxiosError } from "axios";
 import { resetVideoSlice } from "../../services/helpers";
 import { useParams } from "react-router-dom";
@@ -136,17 +137,27 @@ export default function LinkInput() {
           validateVideoUrl(inpVideoUrl);
         }}
       >
-        <TextField
-          id="outlined-basic"
-          label="Enter the link of youtube video"
-          disabled={!isAdmin}
-          variant="outlined"
-          autoComplete="off"
-          sx={{ minWidth: { md: "85%", xs: "70%" }, margin: "20px 0" }}
-          onChange={(e) => {
-            setInpVideoUrl(e.target.value);
-          }}
-        />
+        <Tooltip title={!isAdmin ? "Only admins can change the video" : ""}>
+          <TextField
+            id="outlined-basic"
+            label={
+              isAdmin
+                ? "Enter the link of youtube video"
+                : "If you feel your video is not in sync with others, just pause and play once"
+            }
+            disabled={!isAdmin}
+            variant="outlined"
+            autoComplete="off"
+            sx={{
+              minWidth: { md: "85%", xs: "70%" },
+              margin: "20px 0",
+              cursor: "pointer",
+            }}
+            onChange={(e) => {
+              setInpVideoUrl(e.target.value);
+            }}
+          />
+        </Tooltip>
         <Button
           type="submit"
           variant="contained"
