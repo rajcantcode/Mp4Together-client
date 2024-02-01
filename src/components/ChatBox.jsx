@@ -18,8 +18,8 @@ import {
 } from "@chatscope/chat-ui-kit-react";
 
 // Socket.io import
-import { getSocket } from "../socket/socketUtils";
-import { sendMessage } from "../socket/socketUtils";
+import { getSocket } from "../socket/socketUtils.js";
+import { sendMessage } from "../socket/socketUtils.js";
 
 // Redux imports
 import { useSelector, useDispatch } from "react-redux";
@@ -36,17 +36,6 @@ const ChatBox = () => {
 
   const socket = getSocket();
   const dispatch = useDispatch();
-  socket.on("connect_error", (error) => {
-    console.error("Connection error:", error);
-    // Handle the error here
-  });
-
-  socket.on("connect_timeout", (timeout) => {
-    console.error("Connection timeout:", timeout);
-    // Handle the timeout here
-    socket.connect();
-  });
-
   useEffect(() => {
     const init = () => {
       // Receive and display messages
@@ -94,6 +83,17 @@ const ChatBox = () => {
             return prevMsgs;
           }
         });
+      });
+
+      socket.on("connect_error", (error) => {
+        console.error("Connection error:", error);
+        // Handle the error here
+      });
+
+      socket.on("connect_timeout", (timeout) => {
+        console.error("Connection timeout:", timeout);
+        // Handle the timeout here
+        socket.connect();
       });
     };
 

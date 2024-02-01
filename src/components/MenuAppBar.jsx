@@ -29,7 +29,7 @@ import {
   setUserSocketRoomId,
 } from "../store/userSlice";
 
-import { getSocket } from "../socket/socketUtils";
+import { getSocket } from "../socket/socketUtils.js";
 import { resetRoomSlice, resetVideoSlice } from "../../services/helpers";
 import { useState } from "react";
 
