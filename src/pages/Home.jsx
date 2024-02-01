@@ -6,6 +6,7 @@ import {
   setRoomAdmins,
   setRoomId,
   setRoomMembers,
+  setRoomValidity,
   setSocketRoomId,
 } from "../store/roomSlice";
 import {
@@ -18,7 +19,7 @@ import Container from "@mui/material/Container";
 import MenuAppBar from "../components/MenuAppBar";
 import LinkInput from "../components/LinkInput";
 import Interactive from "../components/Interactive";
-import { joinSocketRoom, getSocket } from "../socket/socketUtils";
+import { joinSocketRoom, getSocket } from "../socket/socketUtils.js";
 import { fetchUser } from "../../services/helpers";
 import {
   setVideoId,
@@ -26,6 +27,8 @@ import {
   setVideoUrl,
   setVideoUrlValidity,
 } from "../store/videoUrlSlice";
+import Snackbar from "@mui/joy/Snackbar";
+import ShareIcon from "@mui/icons-material/Share";
 
 // This component can be accessed by user in two ways
 // 1] By visiting /room path and entering roomID
@@ -41,6 +44,13 @@ const Home = () => {
   const dispatch = useDispatch();
   const errorRef = useRef(null);
   const { username } = useSelector((state) => state.userInfo);
+  const { socketRoomId } = useSelector((state) => state.roomInfo);
+  const { isRoomValid } = useSelector((state) => state.roomInfo);
+  const [showSnackbar, setShowSnackbar] = useState(isRoomValid);
+
+  const handleSnackbarClose = () => {
+    setShowSnackbar(false);
+  };
 
   useEffect(() => {
     if (username === "") {
@@ -71,6 +81,7 @@ const Home = () => {
 
             dispatch(setUserRoomId(roomId));
             dispatch(setRoomId(roomId));
+            dispatch(setRoomValidity(true));
 
             dispatch(setUserSocketRoomId(socketRoomId));
             dispatch(setSocketRoomId(socketRoomId));
@@ -104,6 +115,15 @@ const Home = () => {
       })();
     }
   }, []);
+
+  useEffect(() => {
+    socket?.once("connect", () => {
+      if (socketRoomId !== "") {
+        joinSocketRoom(socketRoomId, socket, username);
+      }
+    });
+  }, [socket]);
+
   return (
     <>
       {isValidUser ? (
@@ -111,6 +131,17 @@ const Home = () => {
           <MenuAppBar />
           <LinkInput />
           <Interactive />
+          <Snackbar
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            autoHideDuration={3000}
+            open={showSnackbar}
+            color="success"
+            variant="solid"
+            onClose={handleSnackbarClose}
+            startDecorator={<ShareIcon />}
+          >
+            <div>Share the room link with people you want to watch </div>
+          </Snackbar>
         </Container>
       ) : (
         <div className="flex items-center justify-center h-screen">
