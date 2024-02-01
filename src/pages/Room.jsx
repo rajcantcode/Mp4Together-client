@@ -14,6 +14,7 @@ import {
   setSocketRoomId,
   setRoomMembers,
   setRoomAdmins,
+  setRoomValidity,
 } from "../store/roomSlice";
 import Header from "../components/Header";
 import LoadingButton from "@mui/lab/LoadingButton";
@@ -21,7 +22,7 @@ import { Box } from "@mui/material";
 import { styled } from "@mui/joy/styles";
 import Input from "@mui/joy/Input";
 import SendIcon from "@mui/icons-material/Send";
-import { joinSocketRoom, getSocket } from "../socket/socketUtils";
+import { joinSocketRoom, getSocket } from "../socket/socketUtils.js";
 import axios from "axios";
 import {
   setVideoId,
@@ -29,7 +30,6 @@ import {
   setVideoUrl,
   setVideoUrlValidity,
 } from "../store/videoUrlSlice";
-
 // import "./Room.css";
 
 const StyledInput = styled("input")({
@@ -190,6 +190,7 @@ const Room = () => {
 
         dispatch(setUserSocketRoomId(socketRoomId));
         dispatch(setSocketRoomId(socketRoomId));
+        dispatch(setRoomValidity(true));
 
         dispatch(setRoomMembers(members));
         dispatch(setRoomAdmins(admins));
@@ -282,6 +283,7 @@ const Room = () => {
         dispatch(setRoomId(roomId));
         dispatch(setRoomMembers(members));
         dispatch(setRoomAdmins(admins));
+        dispatch(setRoomValidity(true));
 
         dispatch(setUserSocketRoomId(socketRoomId));
         dispatch(setSocketRoomId(socketRoomId));
