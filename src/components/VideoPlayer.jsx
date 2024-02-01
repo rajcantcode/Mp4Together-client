@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import "../stylesheets/videoPlayer.css";
 // Base styles for media player and provider (~400B).
 import ReactPlayer from "react-player/youtube";
-import { getSocket } from "../socket/socketUtils";
+import { getSocket } from "../socket/socketUtils.js";
 
 // Default behaviour -
 // Admin will cotrol the video, ie : if admin pauses the videos of other members also pauses and if admin skips forward ....
@@ -22,6 +22,8 @@ const VideoPlayer = () => {
 
   // Video player state
   const [isPlaying, setIsPlaying] = useState(true);
+  // Video playback state
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
   // The below two state variables solely exist to determine whether "handlePlayVideo" and "handlePauseVideo" function should execute or not.
   // Since I am using "isPlaying" to pause or play the video, and changing state of "isPlaying" leads to calling "handlePlayVideo" or "handlePauseVideo" depending upon value of "isPlaying", which causes infinite loop in those functions.
@@ -44,10 +46,12 @@ const VideoPlayer = () => {
     socket.on("server-pause-video", handlePauseEvent);
     socket.on("server-play-video", handlePlayEvent);
     socket.on("timestamp", handleTimestamp);
+    socket.on("receive-playback-rate", handlePlaybackEvent);
     return () => {
       socket.off("server-pause-video", handlePauseEvent);
       socket.off("server-play-video", handlePlayEvent);
       socket.off("timestamp", handleTimestamp);
+      socket.off("receive-playback-rate", handlePlaybackEvent);
     };
   }, []);
   const handlePauseEvent = (data) => {
@@ -64,6 +68,10 @@ const VideoPlayer = () => {
     setIsTimestamp(true);
     videoRef.current.seekTo(timestamp, "seconds");
     setIsPlaying(true);
+  };
+
+  const handlePlaybackEvent = ({ speed }) => {
+    setPlaybackSpeed(speed);
   };
 
   const emitTimestamp = ({ requester }) => {
@@ -108,6 +116,12 @@ const VideoPlayer = () => {
     }
   };
 
+  const handlePlaybackVideo = (speed) => {
+    if (isAdmin) {
+      socket.emit("send-playback-rate", { speed, socketRoomId });
+    }
+  };
+
   const handleError = (error) => {
     console.log("##### Error in react-player #####");
     if (error === 150) {
@@ -115,25 +129,29 @@ const VideoPlayer = () => {
     }
   };
   return (
-    <ReactPlayer
-      ref={videoRef}
-      playing={isPlaying}
-      url={videoUrl}
-      style={{ width: "100%", height: "100%" }}
-      onError={handleError}
-      onPlay={handlePlayVideo}
-      onPause={handlePauseVideo}
-      controls={isAdmin}
-      config={{
-        youtube: {
-          playerVars: {
-            start: startTime,
-            disablekb: isAdmin ? 0 : 1,
-            autoplay: 1,
+    <>
+      <ReactPlayer
+        ref={videoRef}
+        playing={isPlaying}
+        url={videoUrl}
+        style={{ width: "100%", height: "100%" }}
+        playbackRate={playbackSpeed}
+        onError={handleError}
+        onPlay={handlePlayVideo}
+        onPause={handlePauseVideo}
+        onPlaybackRateChange={handlePlaybackVideo}
+        controls={isAdmin}
+        config={{
+          youtube: {
+            playerVars: {
+              start: startTime,
+              disablekb: isAdmin ? 0 : 1,
+              autoplay: 1,
+            },
           },
-        },
-      }}
-    />
+        }}
+      />
+    </>
   );
 };
 
