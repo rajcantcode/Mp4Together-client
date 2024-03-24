@@ -15,7 +15,12 @@ import {
   setRoomMembers,
   setRoomAdmins,
   setRoomValidity,
+  setRoomMembersMicState,
+  setRoomMembersMuteState,
+  setKickSnackbarInfo,
 } from "../store/roomSlice";
+import Snackbar from "@mui/joy/Snackbar";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import Header from "../components/Header";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { Box } from "@mui/material";
@@ -98,6 +103,7 @@ const Room = () => {
   const socket = getSocket();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true); // State to track loading status
+
   useEffect(() => {
     (async () => {
       try {
@@ -133,8 +139,12 @@ const Room = () => {
 
   const navigate = useNavigate();
   const username = useSelector((state) => state.userInfo.username);
+  const kickSnackbarInfo = useSelector(
+    (state) => state.roomInfo.kickSnackbarInfo
+  );
 
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
+  const sfuServerUrl = import.meta.env.VITE_SFU_SERVER_URL;
 
   const toggleJoinInput = () => {
     setShowJoinInput(!showJoinInput);
@@ -183,8 +193,15 @@ const Room = () => {
         return;
       }
       if (response.status === 200) {
-        const { roomId, socketRoomId, members, admins } = resData;
+        const { roomId, socketRoomId, members, admins, membersMicState } =
+          resData;
+        // Join the socket room
         joinSocketRoom(socketRoomId, socket, username);
+
+        // Send a request to sfu server to create a router for the new room
+        await createRouter(socketRoomId);
+
+        // Store all received data from server in redux store
         dispatch(setUserRoomId(roomId));
         dispatch(setRoomId(roomId));
 
@@ -194,6 +211,7 @@ const Room = () => {
 
         dispatch(setRoomMembers(members));
         dispatch(setRoomAdmins(admins));
+        dispatch(setRoomMembersMicState(membersMicState));
 
         // Since the user created the room, they are the admin
         dispatch(setIsAdmin(true));
@@ -276,14 +294,23 @@ const Room = () => {
           username,
           email,
           videoUrl,
+          membersMicState,
         } = resData;
 
         joinSocketRoom(socketRoomId, socket, username);
+        const membersMuteState = {};
+        members.forEach((member) => {
+          if (member !== username) {
+            membersMuteState[member] = false;
+          }
+        });
         dispatch(setUserRoomId(roomId));
         dispatch(setRoomId(roomId));
         dispatch(setRoomMembers(members));
         dispatch(setRoomAdmins(admins));
         dispatch(setRoomValidity(true));
+        dispatch(setRoomMembersMicState(membersMicState));
+        dispatch(setRoomMembersMuteState(membersMuteState));
 
         dispatch(setUserSocketRoomId(socketRoomId));
         dispatch(setSocketRoomId(socketRoomId));
@@ -320,114 +347,145 @@ const Room = () => {
     }
   };
 
+  const createRouter = async (socketRoomId) => {
+    try {
+      const routerResponse = await axios(
+        `${sfuServerUrl}/router/create/${socketRoomId}`,
+        {
+          method: "post",
+          withCredentials: true,
+        }
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleSnackbarClose = () => {
+    dispatch(setKickSnackbarInfo({ show: false, title: "" }));
+  };
+
   return (
-    <div className="room-container">
-      {isLoading ? ( // Render the modal if isLoading is true
-        <div className="modal">
-          <div className="spinner"></div>
-          <p>Authenticating user, please wait...</p>
-        </div>
-      ) : (
-        <>
-          <Header />
-          <Box
-            className="room-modal"
-            sx={{
-              minWidth: { xs: "85%", md: "50%" },
-              padding: "15px",
-              textAlign: "center",
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <LoadingButton
-              size="small"
-              color="success"
-              onClick={createRoom}
-              loading={createLoading}
-              disabled={createDisabled}
-              variant="contained"
+    <>
+      <div className="room-container">
+        {isLoading ? ( // Render the modal if isLoading is true
+          <div className="modal">
+            <div className="spinner"></div>
+            <p>Authenticating user, please wait...</p>
+          </div>
+        ) : (
+          <>
+            <Header />
+            <Box
+              className="room-modal"
               sx={{
-                margin: "10px",
-                display: "block",
-                minHeight: "56px",
-                width: "70%",
+                minWidth: { xs: "85%", md: "50%" },
+                padding: "15px",
+                textAlign: "center",
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
               }}
             >
-              <span>Create New Room</span>
-            </LoadingButton>
-            {!showJoinInput && <p style={{ color: "red" }}>{errorMsg}</p>}
-            <LoadingButton
-              size="small"
-              onClick={toggleJoinInput}
-              loading={joinLoading}
-              disabled={joinDisabled}
-              variant="contained"
-              sx={{
-                margin: "10px",
-                display: "block",
-                minHeight: "56px",
-                width: "70%",
-              }}
-            >
-              <span>Join a room</span>
-            </LoadingButton>
-            {showJoinInput && (
-              <>
-                <Box
-                  className="join-room-input-container"
-                  width="70%"
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Input
-                    slots={{ input: InnerInput }}
-                    slotProps={{
-                      input: {
-                        placeholder: `https://websiteUrl/unique-room-id`,
-                        type: "text",
-                      },
-                    }}
+              <LoadingButton
+                size="small"
+                color="success"
+                onClick={createRoom}
+                loading={createLoading}
+                disabled={createDisabled}
+                variant="contained"
+                sx={{
+                  margin: "10px",
+                  display: "block",
+                  minHeight: "56px",
+                  width: "70%",
+                }}
+              >
+                <span>Create New Room</span>
+              </LoadingButton>
+              {!showJoinInput && <p style={{ color: "red" }}>{errorMsg}</p>}
+              <LoadingButton
+                size="small"
+                onClick={toggleJoinInput}
+                loading={joinLoading}
+                disabled={joinDisabled}
+                variant="contained"
+                sx={{
+                  margin: "10px",
+                  display: "block",
+                  minHeight: "56px",
+                  width: "70%",
+                }}
+              >
+                <span>Join a room</span>
+              </LoadingButton>
+              {showJoinInput && (
+                <>
+                  <Box
+                    className="join-room-input-container"
+                    width="70%"
                     sx={{
-                      "--Input-minHeight": "56px",
-                      "--Input-radius": "6px",
-                      width: "90%",
-                      margin: "10px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
-                    value={roomLink}
-                    onChange={handleRoomLinkChange}
-                  />
-                  <button
-                    className="send-room-link"
-                    style={{
-                      height: "56px",
-                      width: "10%",
-                      cursor: "pointer",
-                      border: "none",
-                      background: "white",
-                      borderRadius: "8px",
-                    }}
-                    onClick={joinRoom}
-                    disabled={joinBtnDisabled}
                   >
-                    <SendIcon sx={{ fontSize: "medium" }} />
-                  </button>
-                </Box>
-                <p style={{ color: "red" }}>{errorMsg}</p>
-              </>
-            )}
-          </Box>
-        </>
-      )}
-    </div>
+                    <Input
+                      slots={{ input: InnerInput }}
+                      slotProps={{
+                        input: {
+                          placeholder: `https://websiteUrl/unique-room-id`,
+                          type: "text",
+                        },
+                      }}
+                      sx={{
+                        "--Input-minHeight": "56px",
+                        "--Input-radius": "6px",
+                        width: "90%",
+                        margin: "10px",
+                      }}
+                      value={roomLink}
+                      onChange={handleRoomLinkChange}
+                    />
+                    <button
+                      className="send-room-link"
+                      style={{
+                        height: "56px",
+                        width: "10%",
+                        cursor: "pointer",
+                        border: "none",
+                        background: "white",
+                        borderRadius: "8px",
+                      }}
+                      onClick={joinRoom}
+                      disabled={joinBtnDisabled}
+                    >
+                      <SendIcon sx={{ fontSize: "medium" }} />
+                    </button>
+                  </Box>
+                  <p style={{ color: "red" }}>{errorMsg}</p>
+                </>
+              )}
+            </Box>
+          </>
+        )}
+      </div>
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        autoHideDuration={3000}
+        open={kickSnackbarInfo.show}
+        color="danger"
+        variant="solid"
+        onClose={handleSnackbarClose}
+        startDecorator={<ErrorOutlineIcon />}
+      >
+        <div>{kickSnackbarInfo.title}</div>
+      </Snackbar>
+    </>
   );
 };
 
