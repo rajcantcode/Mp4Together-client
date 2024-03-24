@@ -112,6 +112,7 @@ export const fetchUser = async (reqRoomId) => {
         username,
         email,
         videoUrl,
+        membersMicState,
       } = resData;
 
       return {
@@ -123,6 +124,7 @@ export const fetchUser = async (reqRoomId) => {
         username,
         email,
         videoUrl,
+        membersMicState,
       };
     }
   } catch (error) {
