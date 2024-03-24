@@ -19,6 +19,7 @@ import { getSocket } from "../socket/socketUtils.js";
 import axios, { AxiosError } from "axios";
 import { resetVideoSlice } from "../../services/helpers";
 import { useParams } from "react-router-dom";
+import MemberList from "./MemberList.jsx";
 
 export default function LinkInput() {
   const socket = getSocket();
@@ -43,6 +44,9 @@ export default function LinkInput() {
       socket.off("transmit-new-video-url", handleNewVideoUrl);
     };
   }, [socket]);
+  // useEffect(() => {
+  //   console.log("isAdmin useEffect from LinkInput: ", isAdmin);
+  // }, [isAdmin]);
 
   const handleSnackbarClose = () => {
     setIsServerError(false);
@@ -50,8 +54,11 @@ export default function LinkInput() {
   const validateVideoUrl = async (url) => {
     try {
       const baseUrl = import.meta.env.VITE_BACKEND_URL;
+      // const urlRegex =
+      //   /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/(?:[^\/\n\s]+\/)?live\/)([a-zA-Z0-9_-]+)(?:[?&]t=([a-zA-Z0-9_-]+))?/;
+
       const urlRegex =
-        /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/(?:[^\/\n\s]+\/)?live\/)([a-zA-Z0-9_-]+)(?:[?&]t=([a-zA-Z0-9_-]+))?/;
+        /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=|shorts\/)|youtu\.be\/|youtube\.com\/(?:[^\/\n\s]+\/)?live\/)([a-zA-Z0-9_-]+)(?:[?&]t=([a-zA-Z0-9_-]+))?/;
 
       if (!urlRegex.test(url)) throw new Error("Invalid youtube url");
 
@@ -104,8 +111,8 @@ export default function LinkInput() {
       dispatch(setVideoStartTime(startTime));
       dispatch(setVideoUrlValidity(true));
     } catch (error) {
+      console.error(error);
       resetVideoSlice(dispatch);
-      console.log("#### Error at validateVideoUrl function ####");
       if (error instanceof AxiosError && error.code === "ERR_BAD_REQUEST") {
         // Display toast that the URL is invalid
         setIsServerError(true);
@@ -118,7 +125,7 @@ export default function LinkInput() {
         setServerErrorMessage(error.message);
         return;
       }
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -129,7 +136,12 @@ export default function LinkInput() {
         direction="row"
         alignItems={"center"}
         justifyContent={"space-evenly"}
-        sx={{ width: "100%", height: "100px", backgroundColor: "orange" }}
+        sx={{
+          width: "100%",
+          height: "100px",
+          backgroundColor: "orange",
+          position: "relative",
+        }}
         onSubmit={(e) => {
           e.preventDefault();
           const textfieldEl = e.target.firstChild.children[1].firstChild;
