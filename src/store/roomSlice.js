@@ -10,6 +10,9 @@ export const roomSlice = createSlice({
     admins: [],
     isRoomValid: true,
     isSocketRoomValid: true,
+    membersMicState: {},
+    membersMuteState: {},
+    kickSnackbarInfo: { show: false, title: "" },
   },
   reducers: {
     setRoomId: (state, action) => {
@@ -30,6 +33,27 @@ export const roomSlice = createSlice({
     setRoomAdmins: (state, action) => {
       state.admins = [...action.payload];
     },
+    setRoomMembersMicState: (state, action) => {
+      if (Array.isArray(action.payload)) {
+        const [username, status] = action.payload;
+        state.membersMicState[username] = status;
+        return;
+      } else {
+        state.membersMicState = { ...action.payload };
+      }
+    },
+    setRoomMembersMuteState: (state, action) => {
+      if (Array.isArray(action.payload)) {
+        const [username, status] = action.payload;
+        state.membersMuteState[username] = status;
+        return;
+      } else {
+        state.membersMuteState = { ...action.payload };
+      }
+    },
+    setKickSnackbarInfo: (state, action) => {
+      state.kickSnackbarInfo = { ...action.payload };
+    },
     addNewMember: (state, action) => {
       state.members.push(action.payload);
     },
@@ -48,5 +72,8 @@ export const {
   setRoomAdmins,
   addNewMember,
   addNewAdmin,
+  setRoomMembersMicState,
+  setRoomMembersMuteState,
+  setKickSnackbarInfo,
 } = roomSlice.actions;
 export default roomSlice.reducer;
