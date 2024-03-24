@@ -28,8 +28,9 @@ import {
   setUserRoomId,
   setUserSocketRoomId,
 } from "../store/userSlice";
+import { setKickSnackbarInfo } from "../store/roomSlice.js";
 
-import { getSocket } from "../socket/socketUtils.js";
+import { getSfuSocket, getSocket } from "../socket/socketUtils.js";
 import { resetRoomSlice, resetVideoSlice } from "../../services/helpers";
 import { useState } from "react";
 
@@ -37,15 +38,16 @@ const settings = ["Profile", "Account", "Dashboard", "Logout"];
 
 function MenuAppBar() {
   const socket = getSocket();
+  const sfuSocket = getSfuSocket();
   const [anchorElNav, setAnchorElNav] = useState(null);
   const [anchorElUser, setAnchorElUser] = useState(null);
   const [exitLoading, setExitLoading] = useState(false);
-  const [isServerError, setIsServerError] = useState(false);
+  const [snackbarInfo, setSnackbarInfo] = useState({ show: false, title: "" });
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Access the URL parameter using useParams from react-router-dom
+  // Access the URL parameter using useParams from react-router-dom, Idk why redux does not give me the roomID, so I have to use url parameters
   const { roomId } = useParams();
   const username = useSelector((state) => state.userInfo.username);
   const socketRoomId = useSelector((state) => state.roomInfo.socketRoomId);
@@ -85,8 +87,22 @@ function MenuAppBar() {
     //     }
     // });
 
+    const kick = async ({ admin }) => {
+      const exitSuccess = await exitRoom(false);
+      if (exitSuccess) {
+        dispatch(
+          setKickSnackbarInfo({
+            show: true,
+            title: `You were kicked by ${admin}`,
+          })
+        );
+        navigate("/room");
+      }
+    };
+    socket.on("exit", kick);
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
+      socket.off("exit", kick);
     };
   }, []);
   const handleOpenNavMenu = (event) => {
@@ -105,10 +121,10 @@ function MenuAppBar() {
   };
 
   const handleSnackbarClose = () => {
-    setIsServerError(false);
+    setSnackbarInfo({ show: false, title: "" });
   };
 
-  const exitRoom = async () => {
+  const exitRoom = async (navigateToRoom = true) => {
     try {
       setExitLoading(true);
       const response = await axios(`${baseUrl}/room/exit/${roomId}`, {
@@ -140,11 +156,17 @@ function MenuAppBar() {
           username: username,
           mainRoomId: roomId,
         });
-        socket.disconnect();
-        navigate("/room");
+        socket.close();
+        sfuSocket.emit("close-transports", { leaver: username, socketRoomId });
+        sfuSocket.close();
+        navigateToRoom && navigate("/room");
+        return true;
       }
     } catch (error) {
-      setIsServerError(true);
+      setSnackbarInfo({
+        show: true,
+        title: "Unable to exit room \n please try again later",
+      });
       console.error(error);
     } finally {
       setExitLoading(false);
@@ -222,10 +244,9 @@ function MenuAppBar() {
               }}
             >
               <Tooltip title="Copy room link">
-                <IconButton>
+                <IconButton onClick={copyRoomLink}>
                   <FileCopyIcon
                     sx={{ color: "yellow", margin: { xs: 0, md: "0 10px" } }}
-                    onClick={copyRoomLink}
                   />
                 </IconButton>
               </Tooltip>
@@ -274,9 +295,9 @@ function MenuAppBar() {
                 open={Boolean(anchorElUser)}
                 onClose={handleCloseUserMenu}
               >
-                {settings.map((setting) => (
-                  <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                    <Typography textAlign="center">{setting}</Typography>
+                {settings.map((setting, index) => (
+                  <MenuItem key={index} onClick={handleCloseUserMenu}>
+                    <Typography textAlign="center">{"setting"}</Typography>
                   </MenuItem>
                 ))}
               </Menu>
@@ -287,16 +308,13 @@ function MenuAppBar() {
       <Snackbar
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         autoHideDuration={3000}
-        open={isServerError}
+        open={snackbarInfo.show}
         color="danger"
         variant="solid"
         onClose={handleSnackbarClose}
         startDecorator={<ErrorOutlineIcon />}
       >
-        <div>
-          <p>Unable to exit room</p>
-          <p>Please try again later</p>
-        </div>
+        <div>{snackbarInfo.title}</div>
       </Snackbar>
     </>
   );
