@@ -18,12 +18,17 @@ import {
 } from "@chatscope/chat-ui-kit-react";
 
 // Socket.io import
-import { getSocket } from "../socket/socketUtils.js";
+import { getSfuSocket, getSocket } from "../socket/socketUtils.js";
 import { sendMessage } from "../socket/socketUtils.js";
 
 // Redux imports
 import { useSelector, useDispatch } from "react-redux";
-import { setRoomMembers, setRoomAdmins } from "../store/roomSlice";
+import {
+  setRoomMembers,
+  setRoomAdmins,
+  setRoomMembersMicState,
+  setRoomMembersMuteState,
+} from "../store/roomSlice";
 import { setIsAdmin } from "../store/userSlice";
 
 const ChatBox = () => {
@@ -35,78 +40,79 @@ const ChatBox = () => {
   const members = useSelector((state) => state.roomInfo.members);
 
   const socket = getSocket();
+  const sfuSocket = getSfuSocket();
   const dispatch = useDispatch();
   useEffect(() => {
-    const init = () => {
-      // Receive and display messages
-      socket.on("receive-message", (msgObj) => {
-        setMsgArray((prevMsgs) => {
-          if (isUniqueKey(prevMsgs, msgObj)) {
-            return [...prevMsgs, msgObj];
-          } else {
-            return prevMsgs;
-          }
-        });
+    const handleJoinMsg = ({
+      msgObj,
+      members,
+      admins,
+      membersMicState,
+      joiner,
+    }) => {
+      dispatch(setRoomMembers(members));
+      dispatch(setRoomAdmins(admins));
+      dispatch(setRoomMembersMuteState([joiner, false]));
+      dispatch(setRoomMembersMicState(membersMicState));
+      admins.forEach((admin) => {
+        if (admin === username) {
+          dispatch(setIsAdmin(true));
+          return;
+        }
       });
-
-      socket.on("join-msg", ({ msgObj, members, admins }) => {
-        setMsgArray((prevMsgs) => {
-          if (isUniqueKey(prevMsgs, msgObj)) {
-            dispatch(setRoomMembers(members));
-            dispatch(setRoomAdmins(admins));
-            admins.forEach((admin) => {
-              if (admin === username) {
-                dispatch(setIsAdmin(true));
-                return;
-              }
-            });
-            return [...prevMsgs, msgObj];
-          } else {
-            return prevMsgs;
-          }
-        });
-      });
-
-      socket.on("exit-msg", ({ msgObj, members, admins }) => {
-        setMsgArray((prevMsgs) => {
-          if (isUniqueKey(prevMsgs, msgObj)) {
-            dispatch(setRoomMembers(members));
-            dispatch(setRoomAdmins(admins));
-            admins.forEach((admin) => {
-              if (admin === username) {
-                dispatch(setIsAdmin(true));
-                return;
-              }
-            });
-            return [...prevMsgs, msgObj];
-          } else {
-            return prevMsgs;
-          }
-        });
-      });
-
-      socket.on("connect_error", (error) => {
-        console.error("Connection error:", error);
-        // Handle the error here
-      });
-
-      socket.on("connect_timeout", (timeout) => {
-        console.error("Connection timeout:", timeout);
-        // Handle the timeout here
-        socket.connect();
-      });
+      setMsgArray((prevMsgs) => [...prevMsgs, msgObj]);
     };
 
-    init();
+    const handleExitMessage = ({
+      msgObj,
+      members,
+      admins,
+      membersMicState,
+    }) => {
+      dispatch(setRoomMembers(members));
+      dispatch(setRoomAdmins(admins));
+      dispatch(setRoomMembersMicState(membersMicState));
+      admins.forEach((admin) => {
+        if (admin === username) {
+          dispatch(setIsAdmin(true));
+          return;
+        }
+      });
+      setMsgArray((prevMsgs) => [...prevMsgs, msgObj]);
+    };
+
+    const handleReceiveMessage = (msgObj) => {
+      setMsgArray((prevMsgs) => [...prevMsgs, msgObj]);
+    };
+
+    const handleConnectError = (error) => {
+      console.error("Connection error:", error);
+    };
+
+    const handleConnectionTimeout = (timeout) => {
+      console.error("Connection timeout:", timeout);
+      // Handle the timeout here
+      socket.connect();
+    };
+
+    // Receive and display messages
+    socket.on("receive-message", handleReceiveMessage);
+    socket.on("join-msg", handleJoinMsg);
+    socket.on("exit-msg", handleExitMessage);
+
+    socket.on("connect_error", handleConnectError);
+    socket.on("connect_timeout", handleConnectionTimeout);
+
+    return () => {
+      socket.off("receive-message", handleReceiveMessage);
+      socket.off("join-msg", handleJoinMsg);
+      socket.off("exit-msg", handleExitMessage);
+      socket.off("connect_error", handleConnectError);
+      socket.off("connect_timeout", handleConnectionTimeout);
+    };
   }, []);
 
   let prevSender = "";
-
-  // Function to check if the message we are trying to insert in the array, already exists.
-  // I know this is weird but React in strictmode for some weird reason calls the setMsgArr function twice, which leads to duplicate messages. 😭
-  const isUniqueKey = (msgArr, msgObj) => {
-    return !msgArr.some((msg) => msg.key === msgObj.key);
-  };
 
   const handleSend = (message) => {
     // Construct the msg object that is to be sent to the server
