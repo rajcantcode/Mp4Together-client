@@ -57,14 +57,19 @@ export default function SignUp() {
 
   function validateUserData(email, password, username) {
     setSignUpErrMsg({ emailErr: "", passwordErr: "", usernameErr: "" });
-    // Regular expression pattern for validating email addresses.
+
+    // Regular expression pattern for validating email addresses and username
     const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    const usernamePattern = /^[A-Za-z0-9]+$/;
 
     // This check is used for checking if user has entered all details correctly
     if (
       emailPattern.test(email) &&
       password.length >= 8 &&
-      username.length >= 4
+      password.length <= 15 &&
+      username.length >= 4 &&
+      username.length <= 15 &&
+      usernamePattern.test(username)
     ) {
       setSignUpErrMsg({ emailErr: "", passwordErr: "", usernameErr: "" });
       return true;
@@ -80,21 +85,31 @@ export default function SignUp() {
     }
 
     // Check if the password is at least 8 characters long.
-    if (password.length < 8) {
+    if (password.length < 8 || password.length > 15) {
       setSignUpErrMsg((state) => {
         return {
           ...state,
-          passwordErr: "Password must be at least 8 characters long",
+          passwordErr: "Password must be between 8 to 15 characters in length",
         };
       });
     }
 
     // Check if the username is at least 4 characters long.
-    if (username.length < 4) {
+    if (username.length < 4 || username.length > 15) {
       setSignUpErrMsg((state) => {
         return {
           ...state,
-          usernameErr: "Username must be at least 4 characters long",
+          usernameErr: "Username must be between 4 to 15 characters long",
+        };
+      });
+    }
+
+    // Check if the username contains any special characters
+    if (!usernamePattern.test(username)) {
+      setSignUpErrMsg((state) => {
+        return {
+          ...state,
+          usernameErr: "Username can only contain letters and numbers",
         };
       });
     }
@@ -111,6 +126,7 @@ export default function SignUp() {
     const username = data.get("username");
 
     if (!validateUserData(email, password, username)) {
+      console.log("Invalid user");
       return;
     }
 
@@ -136,13 +152,36 @@ export default function SignUp() {
       // Check for username or email already exists
       if (response.status === 409) {
         const resData = response.data;
-        if (resData.msg === "Username is already taken") {
+        if (resData.message === "Username is already taken") {
           setSignUpErrMsg((state) => {
             return { ...state, usernameErr: "Username is already taken" };
           });
         } else {
           setSignUpErrMsg((state) => {
             return { ...state, emailErr: "Email is already registered" };
+          });
+        }
+      }
+      // Check for Joi validation errors
+      else if (response.status === 403) {
+        const resData = response.data;
+        if (
+          resData.message.includes("email") ||
+          resData.message.includes("Email")
+        ) {
+          setSignUpErrMsg((state) => {
+            return { ...state, emailErr: resData.message };
+          });
+        } else if (
+          resData.message.includes("password") ||
+          resData.message.includes("Password")
+        ) {
+          setSignUpErrMsg((state) => {
+            return { ...state, passwordErr: resData.message };
+          });
+        } else {
+          setSignUpErrMsg((state) => {
+            return { ...state, usernameErr: resData.message };
           });
         }
       } else {
