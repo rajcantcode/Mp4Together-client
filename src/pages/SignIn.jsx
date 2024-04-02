@@ -29,7 +29,7 @@ function Copyright(props) {
       {...props}
     >
       {"Copyright © "}
-      <Link color="inherit" href="https://mui.com/">
+      <Link color="inherit" href="/">
         Mp4Together
       </Link>{" "}
       {new Date().getFullYear()}
@@ -56,7 +56,7 @@ export default function SignIn() {
     const data = new FormData(event.currentTarget);
 
     const loginInfo = {
-      email: data.get("email"),
+      emailOrUsername: data.get("emailOrUsername"),
       password: data.get("password"),
     };
 
@@ -76,8 +76,8 @@ export default function SignIn() {
 
       // Check for invalid email or password
       if (response.status !== 200) {
-        if (response.status === 401) {
-          errorRef.current.textContent = resData.msg;
+        if (response.status === 401 || response.status === 403) {
+          errorRef.current.textContent = resData.message;
           errorRef.current.style.display = "block";
         }
       } else {
@@ -124,10 +124,10 @@ export default function SignIn() {
                 margin="normal"
                 required
                 fullWidth
-                type="email"
+                type="text"
                 id="email"
-                label="Email Address"
-                name="email"
+                label="Enter e-mail or username"
+                name="emailOrUsername"
                 autoComplete="email"
                 autoFocus
               />
