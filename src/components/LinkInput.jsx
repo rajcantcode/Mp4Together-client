@@ -24,7 +24,7 @@ import MemberList from "./MemberList.jsx";
 export default function LinkInput() {
   const socket = getSocket();
   const [inpVideoUrl, setInpVideoUrl] = useState("");
-  const { isAdmin } = useSelector((state) => state.userInfo);
+  const { isAdmin, username } = useSelector((state) => state.userInfo);
 
   const { roomId } = useParams();
   const { socketRoomId } = useSelector((state) => state.roomInfo);
@@ -54,8 +54,6 @@ export default function LinkInput() {
   const validateVideoUrl = async (url) => {
     try {
       const baseUrl = import.meta.env.VITE_BACKEND_URL;
-      // const urlRegex =
-      //   /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/(?:[^\/\n\s]+\/)?live\/)([a-zA-Z0-9_-]+)(?:[?&]t=([a-zA-Z0-9_-]+))?/;
 
       const urlRegex =
         /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=|shorts\/)|youtu\.be\/|youtube\.com\/(?:[^\/\n\s]+\/)?live\/)([a-zA-Z0-9_-]+)(?:[?&]t=([a-zA-Z0-9_-]+))?/;
@@ -104,6 +102,8 @@ export default function LinkInput() {
           socketRoomId,
           videoId,
           startTime,
+          username,
+          mainRoomId: roomId,
         });
       }
       dispatch(setVideoUrl(noCookieUrl));
