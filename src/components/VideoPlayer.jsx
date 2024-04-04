@@ -8,16 +8,16 @@ import { getSocket } from "../socket/socketUtils.js";
 
 // Default behaviour -
 // Admin will cotrol the video, ie : if admin pauses the videos of other members also pauses and if admin skips forward ....
-// Other users can pause, play, skip forward, backward but that will not effect other members in the room. They can again return to the current timestamp of the video using a 'live' button, that will take them to the current timestamp of the video playing on the admin's side.
-// Also introduce a lock state, Lock state can be enabled or disabled by the admin.
-// Once enabled, other members can only pause or play the video on their side.
+// Other users can pause, play but that will not effect other members in the room.
 
 const VideoPlayer = () => {
   const socket = getSocket();
   const { videoId, videoUrl, startTime } = useSelector(
     (state) => state.videoUrl
   );
-  const { socketRoomId, admins } = useSelector((state) => state.roomInfo);
+  const { socketRoomId, admins, roomId } = useSelector(
+    (state) => state.roomInfo
+  );
   const { isAdmin, username } = useSelector((state) => state.userInfo);
 
   // Video player state
@@ -86,6 +86,7 @@ const VideoPlayer = () => {
       socketRoom: socketRoomId,
       username: requester,
       admin: username,
+      mainRoomId: roomId,
     });
   };
 
@@ -96,12 +97,18 @@ const VideoPlayer = () => {
     }
     if (isAdmin) {
       const curTimestamp = Math.trunc(videoRef.current.getCurrentTime());
-      socket.emit("play-video", { socketRoomId, curTimestamp });
+      socket.emit("play-video", {
+        socketRoomId,
+        curTimestamp,
+        username,
+        mainRoomId: roomId,
+      });
     } else {
       socket.emit("req-timestamp", {
         socketRoom: socketRoomId,
         admin: admins[0],
         username,
+        mainRoomId: roomId,
       });
     }
   };
@@ -112,13 +119,22 @@ const VideoPlayer = () => {
       return;
     }
     if (isAdmin) {
-      socket.emit("pause-video", { socketRoomId });
+      socket.emit("pause-video", {
+        socketRoomId,
+        username,
+        mainRoomId: roomId,
+      });
     }
   };
 
   const handlePlaybackVideo = (speed) => {
     if (isAdmin) {
-      socket.emit("send-playback-rate", { speed, socketRoomId });
+      socket.emit("send-playback-rate", {
+        speed,
+        socketRoomId,
+        username,
+        mainRoomId: roomId,
+      });
     }
   };
 
@@ -130,27 +146,53 @@ const VideoPlayer = () => {
   };
   return (
     <>
-      <ReactPlayer
-        ref={videoRef}
-        playing={isPlaying}
-        url={videoUrl}
-        style={{ width: "100%", height: "100%" }}
-        playbackRate={playbackSpeed}
-        onError={handleError}
-        onPlay={handlePlayVideo}
-        onPause={handlePauseVideo}
-        onPlaybackRateChange={handlePlaybackVideo}
-        controls={isAdmin}
-        config={{
-          youtube: {
-            playerVars: {
-              start: startTime,
-              disablekb: isAdmin ? 0 : 1,
-              autoplay: 1,
+      {isAdmin ? (
+        <ReactPlayer
+          ref={videoRef}
+          playing={isPlaying}
+          className="admin-player"
+          url={videoUrl}
+          style={{ width: "100%", height: "100%" }}
+          playbackRate={playbackSpeed}
+          onError={handleError}
+          onPlay={handlePlayVideo}
+          onPause={handlePauseVideo}
+          onPlaybackRateChange={handlePlaybackVideo}
+          controls={true}
+          config={{
+            youtube: {
+              playerVars: {
+                start: startTime,
+                disablekb: 0,
+                autoplay: 1,
+              },
             },
-          },
-        }}
-      />
+          }}
+        />
+      ) : (
+        <ReactPlayer
+          ref={videoRef}
+          playing={isPlaying}
+          url={videoUrl}
+          className="normal-player"
+          style={{ width: "100%", height: "100%" }}
+          playbackRate={playbackSpeed}
+          onError={handleError}
+          onPlay={handlePlayVideo}
+          onPause={handlePauseVideo}
+          onPlaybackRateChange={handlePlaybackVideo}
+          controls={false}
+          config={{
+            youtube: {
+              playerVars: {
+                start: startTime,
+                disablekb: 1,
+                autoplay: 1,
+              },
+            },
+          }}
+        />
+      )}
     </>
   );
 };
