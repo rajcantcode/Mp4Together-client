@@ -122,7 +122,7 @@ const ChatBox = () => {
       sender: username,
     };
     // socket.emit("message", { room, msgObj });
-    sendMessage(room, msgObj, socket);
+    sendMessage(room, msgObj, socket, username);
     setMsgArray((msgArray) => {
       return [
         ...msgArray,
