@@ -1,4 +1,4 @@
-# Mp4Together - A web application which enables watching youtube videos together and communicate over text chat
+# Mp4Together - A web application which enables watching youtube videos together and communicate over text chat and live audio calling
 Built with the React, MongoDB, Express, Node.js
 
 ## Features
