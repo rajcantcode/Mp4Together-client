@@ -130,6 +130,33 @@ export const fetchUser = async (reqRoomId) => {
   } catch (error) {
     console.error(error);
   } finally {
-    executeFetchUser.execute = false;
+    executeFetchUser.execute = true;
+  }
+};
+
+export const verifyUsername = (username) => {
+  try {
+    const usernamePattern = /^[A-Za-z0-9]+$/;
+    if (
+      username.length >= 4 &&
+      username.length <= 15 &&
+      usernamePattern.test(username)
+    ) {
+      return { response: "valid username", valid: true };
+    }
+    if (username.length < 4 || username.length > 15) {
+      return {
+        response: "Username must be between 4 to 15 characters long",
+        valid: false,
+      };
+    }
+    if (!usernamePattern.test(username)) {
+      return {
+        response: "Username can only contain letters and numbers",
+        valid: false,
+      };
+    }
+  } catch (error) {
+    console.error(error);
   }
 };
