@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import "../stylesheets/spinner.css";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { authenticateUser } from "../../services/helpers";
@@ -27,7 +28,11 @@ import { Box } from "@mui/material";
 import { styled } from "@mui/joy/styles";
 import Input from "@mui/joy/Input";
 import SendIcon from "@mui/icons-material/Send";
-import { joinSocketRoom, getSocket } from "../socket/socketUtils.js";
+import {
+  joinSocketRoom,
+  getSocket,
+  getSfuSocket,
+} from "../socket/socketUtils.js";
 import axios from "axios";
 import {
   setVideoId,
@@ -101,6 +106,7 @@ const InnerInput = React.forwardRef(function InnerInput(props, ref) {
 
 const Room = () => {
   const socket = getSocket();
+  const sfuSocket = getSfuSocket();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true); // State to track loading status
 
@@ -120,17 +126,18 @@ const Room = () => {
   }, []);
   const [showJoinInput, setShowJoinInput] = useState(false);
 
-  // State variables to handle loading and disable of create room button
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createDisabled, setCreateDisabled] = useState(false);
-
-  // State variables to handle loading and disable of join room button
-  const [joinLoading, setJoinLoading] = useState(false);
-  const [joinDisabled, setJoinDisabled] = useState(false);
-
-  //   State variable to handle disabling of join submit button
-  const [joinBtnDisabled, setJoinBtnDisabled] = useState(false);
-
+  //  Set disabled status state variable
+  const [disabledStatus, setDisabledStatus] = useState({
+    createBtn: false,
+    joinBtn: false,
+    sendBtn: false,
+  });
+  //  Set loading status state variable
+  const [loadingStatus, setLoadingStatus] = useState({
+    createBtn: false,
+    joinBtn: false,
+    sendBtn: false,
+  });
   //   Room link input
   const [roomLink, setRoomLink] = useState("");
 
@@ -156,10 +163,9 @@ const Room = () => {
 
   // Implement the logic for creating a room here
   const createRoom = async () => {
-    setCreateLoading(true);
-    setJoinDisabled(true);
-    setJoinBtnDisabled(true);
     try {
+      setLoadingStatus((prev) => ({ ...prev, createBtn: true }));
+      setDisabledStatus((prev) => ({ ...prev, joinBtn: true, sendBtn: true }));
       const response = await axios(`${baseUrl}/room/create`, {
         method: "post",
         withCredentials: true,
@@ -220,130 +226,146 @@ const Room = () => {
       }
     } catch (error) {
       // ToDo -> Handle server errrors
-
+      dispatch(
+        setKickSnackbarInfo({
+          show: true,
+          title: "Unable to create room at the moment. Please try again later",
+        })
+      );
       console.error(error);
+    } finally {
+      setDisabledStatus({ joinBtn: false, createBtn: false, sendBtn: false });
+      setLoadingStatus({ joinBtn: false, createBtn: false, sendBtn: false });
     }
-    setCreateLoading(false);
-    setJoinDisabled(false);
-    setJoinBtnDisabled(false);
   };
 
   const joinRoom = async () => {
-    // Implement the logic for joining a room with the roomLink
+    try {
+      setDisabledStatus((prev) => ({
+        ...prev,
+        joinBtn: true,
+        createBtn: true,
+      }));
+      setLoadingStatus((prev) => ({ ...prev, sendBtn: true }));
+      // Regex to validate room link
+      const frontendUrl = import.meta.env.VITE_FRONTEND_URL;
+      const validPattern1 = new RegExp(
+        `^http://${frontendUrl}/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
+      );
+      const validPattern2 = new RegExp(
+        `^${frontendUrl}/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
+      );
+      // Remove the dev pattern when building project
+      const validPatternDev = new RegExp(
+        `^http://localhost:5173/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
+      );
+      const validPatternProd = new RegExp(
+        `^https://${frontendUrl}/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
+      );
+      const validPattern3 = new RegExp(`^[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`);
 
-    // Regex to validate room link
-    const frontendUrl = import.meta.env.VITE_FRONTEND_URL;
-    const validPattern1 = new RegExp(
-      `^http://${frontendUrl}/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
-    );
-    const validPattern2 = new RegExp(
-      `^${frontendUrl}/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
-    );
-    // Remove the dev pattern when building project
-    const validPatternDev = new RegExp(
-      `^http://localhost:5173/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
-    );
-    const validPatternProd = new RegExp(
-      `^https://${frontendUrl}/room/[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`
-    );
-    const validPattern3 = new RegExp(`^[a-zA-Z-]+-[a-zA-Z-]+-[a-zA-Z-]+$`);
+      if (
+        validPattern1.test(roomLink) ||
+        validPattern2.test(roomLink) ||
+        validPattern3.test(roomLink) ||
+        validPatternDev.test(roomLink) ||
+        validPatternProd.test(roomLink)
+      ) {
+        // Define a regular expression pattern to match the three words
+        const pattern = /([\w-]+-[\w-]+-[\w-]+)$/;
+        // Use the regular expression to extract the words
+        const match = roomLink.match(pattern);
+        // The captured group at index 1 contains the three words
+        const reqRoomId = match[1];
 
-    if (
-      validPattern1.test(roomLink) ||
-      validPattern2.test(roomLink) ||
-      validPattern3.test(roomLink) ||
-      validPatternDev.test(roomLink) ||
-      validPatternProd.test(roomLink)
-    ) {
-      // Define a regular expression pattern to match the three words
-      const pattern = /([\w-]+-[\w-]+-[\w-]+)$/;
-      // Use the regular expression to extract the words
-      const match = roomLink.match(pattern);
-      // The captured group at index 1 contains the three words
-      const reqRoomId = match[1];
-
-      // Make api call to join room
-      const response = await axios(`${baseUrl}/room/join/${reqRoomId}`, {
-        method: "post",
-        withCredentials: true,
-        validateStatus: function (status) {
-          // Consider any status code less than 500 as a success
-          return status >= 200 && status < 500;
-        },
-      });
-      const resData = response.data;
-      if (response.status !== 200) {
-        if (response.status === 404) {
-          setErrorMsg(`${resData.msg}`);
-          return;
-        } else if (response.status === 401 || response.status === 403) {
-          setErrorMsg(`${resData.msg}, you will be redirected to login page`);
-          setTimeout(() => {
-            setErrorMsg("");
-            navigate("/login");
-          }, 2000);
-          return;
-        }
-      }
-      if (response.status === 200) {
-        const {
-          roomId,
-          socketRoomId,
-          members,
-          admins,
-          username,
-          email,
-          videoUrl,
-          membersMicState,
-        } = resData;
-
-        joinSocketRoom(socketRoomId, socket, username);
-        const membersMuteState = {};
-        members.forEach((member) => {
-          if (member !== username) {
-            membersMuteState[member] = false;
-          }
+        // Make api call to join room
+        const response = await axios(`${baseUrl}/room/join/${reqRoomId}`, {
+          method: "post",
+          withCredentials: true,
+          validateStatus: function (status) {
+            // Consider any status code less than 500 as a success
+            return status >= 200 && status < 500;
+          },
         });
-        dispatch(setUserRoomId(roomId));
-        dispatch(setRoomId(roomId));
-        dispatch(setRoomMembers(members));
-        dispatch(setRoomAdmins(admins));
-        dispatch(setRoomValidity(true));
-        dispatch(setRoomMembersMicState(membersMicState));
-        dispatch(setRoomMembersMuteState(membersMuteState));
-
-        dispatch(setUserSocketRoomId(socketRoomId));
-        dispatch(setSocketRoomId(socketRoomId));
-        dispatch(setUsername(username));
-        dispatch(setEmail(email));
-
-        socket.once("timestamp", ({ timestamp }) => {
-          if (!videoUrl || videoUrl === "") {
-            setErrorMsg("");
-            setRoomLink("");
-            navigate(`/room/${roomId}`);
+        const resData = response.data;
+        if (response.status !== 200) {
+          if (response.status === 404) {
+            setErrorMsg(`${resData.msg}`);
+            return;
+          } else if (response.status === 401 || response.status === 403) {
+            setErrorMsg(`${resData.msg}, you will be redirected to login page`);
+            setTimeout(() => {
+              setErrorMsg("");
+              navigate("/login");
+            }, 2000);
             return;
           }
-          dispatch(setVideoStartTime(timestamp));
-          dispatch(setVideoUrl(videoUrl));
-          dispatch(setVideoId(videoUrl ? videoUrl.split("/embed/")[1] : 0));
-          dispatch(setVideoUrlValidity(true));
-        });
-        socket.emit("join-room", {
-          room: socketRoomId,
-          username: username,
-          mainRoomId: roomId,
-          admin: admins[0],
-        });
+        }
+        if (response.status === 200) {
+          const {
+            roomId,
+            socketRoomId,
+            members,
+            admins,
+            username,
+            email,
+            videoUrl,
+            membersMicState,
+          } = resData;
 
-        setErrorMsg("");
-        setRoomLink("");
+          joinSocketRoom(socketRoomId, socket, username);
+          const membersMuteState = {};
+          members.forEach((member) => {
+            if (member !== username) {
+              membersMuteState[member] = false;
+            }
+          });
+          dispatch(setUserRoomId(roomId));
+          dispatch(setRoomId(roomId));
+          dispatch(setRoomMembers(members));
+          dispatch(setRoomAdmins(admins));
+          dispatch(setRoomValidity(true));
+          dispatch(setRoomMembersMicState(membersMicState));
+          dispatch(setRoomMembersMuteState(membersMuteState));
 
-        navigate(`/room/${roomId}`);
+          dispatch(setUserSocketRoomId(socketRoomId));
+          dispatch(setSocketRoomId(socketRoomId));
+          dispatch(setUsername(username));
+          dispatch(setEmail(email));
+
+          socket.once("timestamp", ({ timestamp }) => {
+            if (!videoUrl || videoUrl === "") {
+              setErrorMsg("");
+              setRoomLink("");
+              navigate(`/room/${roomId}`);
+              return;
+            }
+            dispatch(setVideoStartTime(timestamp));
+            dispatch(setVideoUrl(videoUrl));
+            dispatch(setVideoId(videoUrl ? videoUrl.split("/embed/")[1] : 0));
+            dispatch(setVideoUrlValidity(true));
+          });
+          socket.emit("join-room", {
+            room: socketRoomId,
+            username: username,
+            mainRoomId: roomId,
+            admin: admins[0],
+          });
+
+          setErrorMsg("");
+          setRoomLink("");
+
+          navigate(`/room/${roomId}`);
+        }
+      } else {
+        // Display error message
+        setErrorMsg("Invalid room link or code");
       }
-    } else {
-      // Display error message
-      setErrorMsg("Invalid room link or code");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDisabledStatus({ joinBtn: false, createBtn: false, sendBtn: false });
+      setLoadingStatus({ joinBtn: false, createBtn: false, sendBtn: false });
     }
   };
 
@@ -357,7 +379,7 @@ const Room = () => {
         }
       );
     } catch (error) {
-      console.error(error);
+      throw error;
     }
   };
 
@@ -368,18 +390,27 @@ const Room = () => {
   return (
     <>
       <div className="room-container">
+        <Header renderProfile={!isLoading && true} />
         {isLoading ? ( // Render the modal if isLoading is true
-          <div className="modal">
-            <div className="spinner"></div>
-            <p>Authenticating user, please wait...</p>
+          <div className="absolute translate-y-[-50%] translate-x-[-50%] modal top-1/2 left-1/2 flex justify-between items-center">
+            <p className="text-2xl">Authenticating user, please wait...</p>
+            <div className="lds-roller-2">
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
           </div>
         ) : (
           <>
-            <Header />
             <Box
               className="room-modal"
               sx={{
-                minWidth: { xs: "85%", md: "50%" },
+                minWidth: { xs: "98%", md: "45%", lg: "35%" },
                 padding: "15px",
                 textAlign: "center",
                 position: "absolute",
@@ -395,14 +426,14 @@ const Room = () => {
                 size="small"
                 color="success"
                 onClick={createRoom}
-                loading={createLoading}
-                disabled={createDisabled}
+                loading={loadingStatus.createBtn}
+                disabled={disabledStatus.createBtn}
                 variant="contained"
                 sx={{
                   margin: "10px",
                   display: "block",
                   minHeight: "56px",
-                  width: "70%",
+                  width: "100%",
                 }}
               >
                 <span>Create New Room</span>
@@ -411,14 +442,14 @@ const Room = () => {
               <LoadingButton
                 size="small"
                 onClick={toggleJoinInput}
-                loading={joinLoading}
-                disabled={joinDisabled}
+                loading={loadingStatus.joinBtn}
+                disabled={disabledStatus.joinBtn}
                 variant="contained"
                 sx={{
                   margin: "10px",
                   display: "block",
                   minHeight: "56px",
-                  width: "70%",
+                  width: "100%",
                 }}
               >
                 <span>Join a room</span>
@@ -427,7 +458,7 @@ const Room = () => {
                 <>
                   <Box
                     className="join-room-input-container"
-                    width="70%"
+                    width="100%"
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
@@ -451,21 +482,17 @@ const Room = () => {
                       value={roomLink}
                       onChange={handleRoomLinkChange}
                     />
-                    <button
+                    <LoadingButton
                       className="send-room-link"
-                      style={{
-                        height: "56px",
-                        width: "10%",
-                        cursor: "pointer",
-                        border: "none",
-                        background: "white",
-                        borderRadius: "8px",
-                      }}
+                      sx={{ display: "block", width: "fit-content" }}
+                      disableRipple={true}
+                      variant="text"
                       onClick={joinRoom}
-                      disabled={joinBtnDisabled}
+                      loading={loadingStatus.sendBtn}
+                      disabled={disabledStatus.sendBtn}
                     >
-                      <SendIcon sx={{ fontSize: "medium" }} />
-                    </button>
+                      <SendIcon sx={{ fontSize: "1.9rem" }} />
+                    </LoadingButton>
                   </Box>
                   <p style={{ color: "red" }}>{errorMsg}</p>
                 </>
