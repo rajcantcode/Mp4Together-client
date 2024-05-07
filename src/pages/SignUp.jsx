@@ -18,6 +18,14 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import axios from "axios";
 
 import Header from "../components/Header";
+import LoadingButton from "@mui/lab/LoadingButton";
+import SendIcon from "@mui/icons-material/Send";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "../components/ui/InputOtp";
 
 function Copyright(props) {
   return (
@@ -48,7 +56,11 @@ export default function SignUp() {
     emailErr: "",
     passwordErr: "",
     usernameErr: "",
+    otpErr: "",
   });
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [otp, setOtp] = useState("");
 
   const [isServerError, setIsServerError] = useState(false);
   const handleSnackbarClose = () => {
@@ -56,7 +68,12 @@ export default function SignUp() {
   };
 
   function validateUserData(email, password, username) {
-    setSignUpErrMsg({ emailErr: "", passwordErr: "", usernameErr: "" });
+    setSignUpErrMsg({
+      emailErr: "",
+      passwordErr: "",
+      usernameErr: "",
+      otpErr: "",
+    });
 
     // Regular expression pattern for validating email addresses and username
     const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
@@ -71,7 +88,12 @@ export default function SignUp() {
       username.length <= 15 &&
       usernamePattern.test(username)
     ) {
-      setSignUpErrMsg({ emailErr: "", passwordErr: "", usernameErr: "" });
+      setSignUpErrMsg({
+        emailErr: "",
+        passwordErr: "",
+        usernameErr: "",
+        otpErr: "",
+      });
       return true;
     }
 
@@ -118,28 +140,27 @@ export default function SignUp() {
   }
 
   const handleSubmit = async (event) => {
-    event.preventDefault();
-    const baseUrl = import.meta.env.VITE_BACKEND_URL;
-    const data = new FormData(event.currentTarget);
-    const email = data.get("email");
-    const password = data.get("password");
-    const username = data.get("username");
-
-    if (!validateUserData(email, password, username)) {
-      console.log("Invalid user");
-      return;
-    }
-
-    // Make request to create new User
-    const userInfo = {
-      email,
-      password,
-      username,
-    };
-
     try {
+      event.preventDefault();
+      setLoading(true);
+      const baseUrl = import.meta.env.VITE_BACKEND_URL;
+      const data = new FormData(event.currentTarget);
+      const email = data.get("email");
+      const password = data.get("password");
+      const username = data.get("username");
+
+      if (!validateUserData(email, password, username)) {
+        console.log("Invalid user");
+        return;
+      }
+
+      // Make request to create new User
+      const userInfo = {
+        email,
+        password,
+        username,
+      };
       const response = await axios.post(`${baseUrl}/auth/signup`, userInfo, {
-        withCredentials: true,
         headers: {
           "Content-Type": "application/json",
         },
@@ -184,13 +205,110 @@ export default function SignUp() {
             return { ...state, usernameErr: resData.message };
           });
         }
+      } else if (response.status === 201) {
+        const { email } = response.data;
+        setEmail(email);
+        setSignUpErrMsg({
+          emailErr: "",
+          passwordErr: "",
+          usernameErr: "",
+          otpErr: "",
+        });
+      }
+    } catch (error) {
+      setIsServerError(true);
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    try {
+      setLoading(true);
+      const baseUrl = import.meta.env.VITE_BACKEND_URL;
+      const response = await axios.put(
+        `${baseUrl}/auth/verify`,
+        { email, otp },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          validateStatus: function (status) {
+            // Consider any status code less than 500 as a success
+            return status >= 200 && status < 500;
+          },
+        }
+      );
+      const resData = response.data;
+      if (response.status !== 200) {
+        if (response.status === 401) {
+          setSignUpErrMsg((state) => ({
+            ...state,
+            otpErr: "OTP expired or invalid",
+          }));
+        }
+        if (response.status === 403) {
+          setSignUpErrMsg((state) => ({
+            ...state,
+            otpErr: resData.message,
+          }));
+        }
       } else {
-        setSignUpErrMsg({ emailErr: "", passwordErr: "", usernameErr: "" });
+        setSignUpErrMsg({
+          emailErr: "",
+          passwordErr: "",
+          usernameErr: "",
+          otpErr: "",
+        });
         navigate("/login");
       }
     } catch (error) {
       setIsServerError(true);
       console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendOtp = async () => {
+    try {
+      setLoading(true);
+      const baseUrl = import.meta.env.VITE_BACKEND_URL;
+      const response = await axios.put(
+        `${baseUrl}/auth/resend`,
+        { email },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          validateStatus: function (status) {
+            // Consider any status code less than 500 as a success
+            return status >= 200 && status < 500;
+          },
+        }
+      );
+      const resData = response.data;
+      if (response.status !== 200) {
+        if (response.status === 404 || response.status === 403) {
+          setSignUpErrMsg((state) => ({
+            ...state,
+            otpErr: resData.message,
+          }));
+        }
+        return;
+      }
+      setSignUpErrMsg({
+        emailErr: "",
+        passwordErr: "",
+        usernameErr: "",
+        otpErr: "New otp sent to your email",
+      });
+    } catch (error) {
+      setIsServerError(true);
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -211,94 +329,163 @@ export default function SignUp() {
             <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
               <LockOutlinedIcon />
             </Avatar>
-            <Typography component="h1" variant="h5">
-              Sign up
+            <Typography component="h1" variant="h5" align="center">
+              {email === ""
+                ? "Sign up"
+                : `Please enter the verification code sent to ${email}`}
             </Typography>
-            <Box
-              component="form"
-              noValidate
-              onSubmit={handleSubmit}
-              sx={{ mt: 3 }}
-            >
-              <Grid container spacing={2}>
-                <Grid
-                  item
-                  xs={24}
-                  sm={12}
-                  sx={{
-                    "::after": {
-                      content: `'${signUpErrMsg.usernameErr}'`,
-                      color: "red",
-                    },
-                  }}
-                >
-                  <TextField
-                    required
-                    fullWidth
-                    id="username"
-                    label="Username"
-                    name="username"
-                  />
-                </Grid>
-                <Grid
-                  item
-                  xs={12}
-                  sx={{
-                    "::after": {
-                      content: `'${signUpErrMsg.emailErr}'`,
-                      color: "red",
-                    },
-                  }}
-                >
-                  <TextField
-                    required
-                    fullWidth
-                    id="email"
-                    label="Email Address"
-                    name="email"
-                    autoComplete="email"
-                  />
-                </Grid>
-                <Grid
-                  item
-                  xs={12}
-                  sx={{
-                    "::after": {
-                      content: `'${signUpErrMsg.passwordErr}'`,
-                      color: "red",
-                    },
-                  }}
-                >
-                  <TextField
-                    required
-                    fullWidth
-                    name="password"
-                    label="Password"
-                    type="password"
-                    id="password"
-                    autoComplete="new-password"
-                  />
-                </Grid>
-                <Grid item xs={12}></Grid>
-              </Grid>
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2 }}
+            {email === "" ? (
+              <Box
+                component="form"
+                noValidate
+                onSubmit={handleSubmit}
+                sx={{ mt: 3 }}
               >
-                Sign Up
-              </Button>
-              <Grid container justifyContent="flex-end">
-                <Grid item>
-                  <Link href="/login" variant="body2">
-                    Already have an account? Sign in
-                  </Link>
+                <Grid container spacing={2}>
+                  <Grid
+                    item
+                    xs={24}
+                    sm={12}
+                    sx={{
+                      "::after": {
+                        content: `'${signUpErrMsg.usernameErr}'`,
+                        color: "red",
+                      },
+                    }}
+                  >
+                    <TextField
+                      required
+                      fullWidth
+                      id="username"
+                      label="Username"
+                      name="username"
+                      disabled={loading}
+                    />
+                  </Grid>
+                  <Grid
+                    item
+                    xs={12}
+                    sx={{
+                      "::after": {
+                        content: `'${signUpErrMsg.emailErr}'`,
+                        color: "red",
+                      },
+                    }}
+                  >
+                    <TextField
+                      required
+                      fullWidth
+                      id="email"
+                      label="Email Address"
+                      name="email"
+                      autoComplete="email"
+                      disabled={loading}
+                    />
+                  </Grid>
+                  <Grid
+                    item
+                    xs={12}
+                    sx={{
+                      "::after": {
+                        content: `'${signUpErrMsg.passwordErr}'`,
+                        color: "red",
+                      },
+                    }}
+                  >
+                    <TextField
+                      required
+                      fullWidth
+                      name="password"
+                      label="Password"
+                      type="password"
+                      id="password"
+                      autoComplete="new-password"
+                      disabled={loading}
+                    />
+                  </Grid>
+                  <Grid item xs={12}></Grid>
                 </Grid>
-              </Grid>
-            </Box>
+                <LoadingButton
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{ mt: 3, mb: 2 }}
+                  loading={loading}
+                >
+                  Sign Up
+                </LoadingButton>
+                <Grid container justifyContent="flex-end">
+                  <Grid item>
+                    <Link href="/login" variant="body2">
+                      Already have an account? Sign in
+                    </Link>
+                  </Grid>
+                </Grid>
+              </Box>
+            ) : (
+              <Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mt: 3,
+                  }}
+                >
+                  <InputOTP
+                    maxLength={6}
+                    value={otp}
+                    onChange={(value) => setOtp(value)}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                  <LoadingButton
+                    sx={{ width: "fit-content" }}
+                    disableRipple={true}
+                    variant="text"
+                    onClick={verifyOtp}
+                    loading={loading}
+                  >
+                    <SendIcon sx={{ fontSize: "1.9rem" }} />
+                  </LoadingButton>
+                </Box>
+                <p
+                  className="mt-5 mr-[35px] text-center"
+                  style={{
+                    color: signUpErrMsg.otpErr.includes("New ")
+                      ? "green"
+                      : "red",
+                  }}
+                >
+                  {signUpErrMsg.otpErr}
+                </p>
+                <LoadingButton
+                  sx={{
+                    display: "block",
+                    width: "fit-content",
+                    marginTop: "1.25rem",
+                    marginLeft: "80px",
+                  }}
+                  disableRipple={true}
+                  variant="outlined"
+                  onClick={resendOtp}
+                  loading={loading}
+                >
+                  Resend otp
+                </LoadingButton>
+              </Box>
+            )}
           </Box>
-          <Copyright sx={{ mt: 5 }} />
         </Container>
       </ThemeProvider>
       <Snackbar
