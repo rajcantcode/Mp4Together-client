@@ -16,6 +16,8 @@ import FileCopyIcon from "@mui/icons-material/FileCopy";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import Snackbar from "@mui/joy/Snackbar";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import EditIcon from "@mui/icons-material/Edit";
+import SendIcon from "@mui/icons-material/Send";
 
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -32,7 +34,7 @@ import { setKickSnackbarInfo } from "../store/roomSlice.js";
 
 import { getSfuSocket, getSocket } from "../socket/socketUtils.js";
 import { resetRoomSlice, resetVideoSlice } from "../../services/helpers";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
 
@@ -42,51 +44,20 @@ function MenuAppBar() {
   const [anchorElNav, setAnchorElNav] = useState(null);
   const [anchorElUser, setAnchorElUser] = useState(null);
   const [exitLoading, setExitLoading] = useState(false);
+  const [shouldExit, setShouldExit] = useState(true);
+  const shouldExitRef = useRef(shouldExit);
   const [snackbarInfo, setSnackbarInfo] = useState({ show: false, title: "" });
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   // Access the URL parameter using useParams from react-router-dom, Idk why redux does not give me the roomID, so I have to use url parameters
-  const { roomId } = useParams();
-  const username = useSelector((state) => state.userInfo.username);
-  const socketRoomId = useSelector((state) => state.roomInfo.socketRoomId);
+  // const { roomId } = useParams();
+  const { username, email } = useSelector((state) => state.userInfo);
+  const { socketRoomId, roomId } = useSelector((state) => state.roomInfo);
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
-    // I have to implement the functionality wher if user closes the tab or refreshes the tab, they are exitted from room, I have tried many ways, but none of them work well.
-    // So leaving this commented mess here 🥲)
-    const handleBeforeUnload = (event) => {
-      // if (window.performance.getEntriesByType("navigation")[0].type === "reload") {
-      //     event.preventDefault();
-      //     return;
-      // }
-      if (document.visibilityState === "visible") {
-        exitRoom();
-      }
-      // if (!event.persisted && !event.currentTarget.performance.navigation.type === 1) {
-      //     // Check if the event is related to page reload
-      //     // Call the exitRoom function when the user closes the tab or navigates away
-      //     exitRoom();
-      // }
-      // else {
-      //     event.preventDefault();
-      //     event.returnValue = "If you leave you will be removed from room"
-      // }
-      // Check if the event's returnValue has been modified
-      // if (!event.returnValue) {
-      //     // The user is closing the tab, so call the exitRoom function
-      //     exitRoom();
-      // }
-      // exitRoom();
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    // window.addEventListener('beforeunload', (e) => {
-    //     if (!e.persisted) {
-    //         exitRoom();
-    //     }
-    // });
-
     const kick = async ({ admin }) => {
       const exitSuccess = await exitRoom(false);
       if (exitSuccess) {
@@ -100,11 +71,18 @@ function MenuAppBar() {
       }
     };
     socket.on("exit", kick);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+    return async () => {
+      // To call exitRoom, when user clicks back or forward navigation arrows/button
+      if (shouldExitRef.current) {
+        await exitRoom(false);
+      }
       socket.off("exit", kick);
     };
   }, []);
+
+  useEffect(() => {
+    shouldExitRef.current = shouldExit;
+  }, [shouldExit]);
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
   };
@@ -127,6 +105,7 @@ function MenuAppBar() {
   const exitRoom = async (navigateToRoom = true) => {
     try {
       setExitLoading(true);
+      setShouldExit(false);
       const response = await axios(`${baseUrl}/room/exit/${roomId}`, {
         method: "post",
         withCredentials: true,
@@ -156,7 +135,6 @@ function MenuAppBar() {
           username: username,
           mainRoomId: roomId,
         });
-        socket.close();
         sfuSocket.emit("close-transports", { leaver: username, socketRoomId });
         sfuSocket.close();
         navigateToRoom && navigate("/room");
@@ -177,6 +155,50 @@ function MenuAppBar() {
       await navigator.clipboard.writeText(window.location.href);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleLogOut = async () => {
+    try {
+      await exitRoom(false);
+      setExitLoading(true);
+      const response = await axios(`${baseUrl}/auth/logout`, {
+        method: "post",
+        withCredentials: true,
+        validateStatus: function (status) {
+          // Consider any status code less than 500 as a success
+          return status >= 200 && status < 500;
+        },
+      });
+      const resData = response.data;
+      if (response.status !== 200) {
+        if (response.status === 404) {
+          console.error(`No such user with the username ${username} found`);
+          setSnackbarInfo({
+            show: true,
+            title: `No such user with the username ${username} found`,
+          });
+          return;
+        }
+        if (response.status === 401 || response.status === 403) {
+          console.error(`Invalid token or no token provided`);
+        }
+        setSnackbarInfo({
+          show: true,
+          title: "Unable to logout, please try again later",
+        });
+        return;
+      }
+      if (response.status === 200) {
+        setExitLoading(false);
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error(error);
+      setSnackbarInfo({
+        show: true,
+        title: "Unable to logout, please try again later",
+      });
     }
   };
 
@@ -270,7 +292,7 @@ function MenuAppBar() {
                   </Typography>
                 </LoadingButton>
               </Tooltip>
-              <Tooltip title="Open settings">
+              <Tooltip title="Open details">
                 <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                   {/* Use this to change profile photo */}
                   <Avatar
@@ -295,11 +317,33 @@ function MenuAppBar() {
                 open={Boolean(anchorElUser)}
                 onClose={handleCloseUserMenu}
               >
-                {settings.map((setting, index) => (
-                  <MenuItem key={index} onClick={handleCloseUserMenu}>
-                    <Typography textAlign="center">{"setting"}</Typography>
-                  </MenuItem>
-                ))}
+                <Box id="username-box" className="pl-2 pr-2">
+                  <span>username - &nbsp; </span>
+                  <input
+                    type="text"
+                    name="username"
+                    id="username"
+                    value={username}
+                    readOnly
+                    disabled={true}
+                    className="w-1/4 bg-transparent border-none outline-none"
+                  />
+                </Box>
+                <Box id="email-box" className="pl-2 pr-2">
+                  <span>
+                    email &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;{" "}
+                    {email}
+                  </span>
+                </Box>
+                <LoadingButton
+                  onClick={handleLogOut}
+                  loading={exitLoading}
+                  color="warning"
+                  variant="contained"
+                  sx={{ width: "75%", display: "block", margin: "10px auto" }}
+                >
+                  Log out
+                </LoadingButton>
               </Menu>
             </Box>
           </Toolbar>
