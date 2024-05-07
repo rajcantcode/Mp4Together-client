@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { authenticateUser } from "../../services/helpers";
 import "./welcome.css";
+import "../stylesheets/spinner.css";
+import Header from "../components/Header";
 
 const Welcome = () => {
   const [isLoading, setIsLoading] = useState(true); // State to track loading status
@@ -25,16 +27,26 @@ const Welcome = () => {
   }, []);
 
   return (
-    <div className="welcome-container">
+    <div className="relative w-screen h-screen welcome-container">
+      <Header />
       {isLoading ? ( // Render the modal if isLoading is true
-        <div className="modal">
-          <div className="spinner"></div>
-          <p>Authenticating user, please wait...</p>
+        <div className="absolute translate-y-[-50%] translate-x-[-50%] modal top-1/2 left-1/2 flex justify-between items-center">
+          <p className="text-2xl">Authenticating user, please wait...</p>
+          <div className="lds-roller-2">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
         </div>
       ) : (
         <>
           <div className="container">
-            <h1 className="welcome-text">Welcome 2 Watch2Gether</h1>
+            <h1 className="welcome-text">Welcome to Mp4Together</h1>
             <div className="buttons-container">
               <Link to="/register" className="btn register-btn">
                 Register
@@ -42,9 +54,9 @@ const Welcome = () => {
               <Link to="/login" className="btn login-btn">
                 Login
               </Link>
-              <Link to="/guest" className="btn guest-btn">
+              {/* <Link to="/guest" className="btn guest-btn">
                 Login as Guest
-              </Link>
+              </Link> */}
             </div>
           </div>
         </>
