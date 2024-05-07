@@ -1,4 +1,5 @@
 import { Box, ListItem, ListItemIcon, ListItemText } from "@mui/material";
+import Tooltip from "@mui/material/Tooltip";
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import MicIcon from "@mui/icons-material/Mic";
@@ -201,19 +202,21 @@ const OwnMember = ({ name, device }) => {
     <ListItem className="flex justify-between w-full align-middle">
       <ListItemText
         //   Adding 👑 before admin's name
-        primary={isAdmin ? "👑 " + name : "ㅤ " + name}
+        primary={isAdmin ? "👑ㅤ" + name : "ㅤ ㅤ" + name}
       />
       <Box className="icon-container">
-        <ListItemIcon
-          sx={{
-            minWidth: "25px",
-            margin: "0 10px",
-            cursor: "pointer",
-          }}
-          onClick={handleMic}
-        >
-          {micOn ? <MicIcon /> : <MicOffIcon />}
-        </ListItemIcon>
+        <Tooltip title={micOn ? "mute" : "unmute"} placement="top">
+          <ListItemIcon
+            sx={{
+              minWidth: "25px",
+              margin: "0 10px",
+              cursor: "pointer",
+            }}
+            onClick={handleMic}
+          >
+            {micOn ? <MicIcon /> : <MicOffIcon />}
+          </ListItemIcon>
+        </Tooltip>
       </Box>
     </ListItem>
   );
