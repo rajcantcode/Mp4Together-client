@@ -1,4 +1,5 @@
 import { Box, ListItem, ListItemIcon, ListItemText } from "@mui/material";
+import Tooltip from "@mui/material/Tooltip";
 import MicIcon from "@mui/icons-material/Mic";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
@@ -122,6 +123,7 @@ const Member = ({ name, device }) => {
     }
     socket.emit("mic-on-off", {
       username: name,
+      admin: username,
       socketRoomId,
       roomId,
       status: false,
@@ -264,49 +266,63 @@ const Member = ({ name, device }) => {
     <ListItem className="flex justify-between w-full align-middle">
       <ListItemText
         //   Adding 👑 before admin's name
-        primary={admins.includes(name) ? "👑 " + name : "ㅤ " + name}
+        primary={admins.includes(name) ? "👑ㅤ" + name : "ㅤ ㅤ" + name}
       />
       <Box className="icon-container">
         {/* Render micIcon if the client is Admin, so they can mute other
         participants */}
         {isAdmin && (
-          <ListItemIcon
-            sx={{
-              minWidth: "25px",
-              margin: "0 10px",
-              cursor: "pointer",
-            }}
-            onClick={handleMic}
+          <Tooltip
+            title={membersMicState[name] ? "disable mic" : ""}
+            placement="top"
           >
-            {membersMicState[name] ? <MicIcon /> : <MicOffIcon />}
-          </ListItemIcon>
+            <ListItemIcon
+              sx={{
+                minWidth: "25px",
+                margin: "0 10px",
+                cursor: "pointer",
+              }}
+              onClick={handleMic}
+            >
+              {membersMicState[name] ? <MicIcon /> : <MicOffIcon />}
+            </ListItemIcon>
+          </Tooltip>
         )}
         <audio ref={audioRef} className="hidden"></audio>
-        <ListItemIcon
-          sx={{
-            minWidth: "25px",
-            margin: "0 10px",
-            cursor: "pointer",
-          }}
-          onClick={handleSpeaker}
+        <Tooltip
+          title={muted ? "unmute" : membersMicState[name] ? "mute" : ""}
+          placement="top"
         >
-          {!muted && membersMicState[name] && <VolumeUpIcon color="success" />}
-          {!muted && !membersMicState[name] && (
-            <VolumeUpIcon color="disabled" />
-          )}
-          {muted && <VolumeOffIcon color="error" />}
-        </ListItemIcon>
-        {isAdmin && (
           <ListItemIcon
             sx={{
               minWidth: "25px",
               margin: "0 10px",
               cursor: "pointer",
             }}
-            onClick={handleRemoveMember}
+            onClick={handleSpeaker}
           >
-            <PersonRemoveIcon />
+            {!muted && membersMicState[name] && (
+              <VolumeUpIcon color="success" />
+            )}
+            {!muted && !membersMicState[name] && (
+              <VolumeUpIcon color="disabled" />
+            )}
+            {muted && <VolumeOffIcon color="error" />}
           </ListItemIcon>
+        </Tooltip>
+        {isAdmin && (
+          <Tooltip title="kick" placement="top">
+            <ListItemIcon
+              sx={{
+                minWidth: "25px",
+                margin: "0 10px",
+                cursor: "pointer",
+              }}
+              onClick={handleRemoveMember}
+            >
+              <PersonRemoveIcon />
+            </ListItemIcon>
+          </Tooltip>
         )}
       </Box>
     </ListItem>
