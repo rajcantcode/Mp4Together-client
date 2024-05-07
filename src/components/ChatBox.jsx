@@ -42,6 +42,8 @@ const ChatBox = () => {
   const socket = getSocket();
   const sfuSocket = getSfuSocket();
   const dispatch = useDispatch();
+
+  const innerWidth = window.innerWidth;
   useEffect(() => {
     const handleJoinMsg = ({
       msgObj,
@@ -140,7 +142,7 @@ const ChatBox = () => {
       id="chat-box"
       sx={{
         width: "100%",
-        height: "100%",
+        height: innerWidth <= 768 ? "calc(100% - 55px)" : "100%",
         position: "relative",
         backgroundColor: "pink",
       }}
@@ -148,10 +150,12 @@ const ChatBox = () => {
       <div style={{ position: "relative", height: "100%" }}>
         <MainContainer>
           <ChatContainer>
-            <ConversationHeader>
-              <ConversationHeader.Content userName="Chatbox" />
-              <ConversationHeader.Actions></ConversationHeader.Actions>
-            </ConversationHeader>
+            {innerWidth > 768 && (
+              <ConversationHeader>
+                <ConversationHeader.Content userName="Chat" />
+                <ConversationHeader.Actions></ConversationHeader.Actions>
+              </ConversationHeader>
+            )}
             <MessageList>
               {msgArray.map((msgObj, index) => {
                 if (msgObj.type === "notification") {

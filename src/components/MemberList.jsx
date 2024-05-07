@@ -1,4 +1,5 @@
 import { Button, ClickAwayListener, Divider, List } from "@mui/material";
+import "../stylesheets/spinner.css";
 import GroupIcon from "@mui/icons-material/Group";
 import CloseIcon from "@mui/icons-material/Close";
 import OwnMember from "./OwnMember";
@@ -33,6 +34,9 @@ const MemberList = () => {
     });
     return sortedMembers;
   });
+
+  const innerWidth = window.innerWidth;
+
   useEffect(() => {
     const handleUserJoin = ({ members, admins, membersMicState, joiner }) => {
       setSortedMembers((prevMembers) => [...prevMembers, joiner]);
@@ -44,6 +48,7 @@ const MemberList = () => {
       });
     };
     try {
+      console.dir(sfuSocket);
       sfuSocket.emit("getRtpCapabilities", { socketRoomId }, async (params) => {
         if (params.error) {
           throw params.error;
@@ -51,6 +56,7 @@ const MemberList = () => {
         const { rtpCapabilities } = params;
         if (!device.loaded) {
           await device.load({ routerRtpCapabilities: rtpCapabilities });
+          setDevice(device);
         }
       });
       socket.on("join-msg", handleUserJoin);
@@ -88,28 +94,50 @@ const MemberList = () => {
   const handleClickAway = () => {
     setIsOpen(false);
   };
+
   return (
     <>
-      {device.loaded && (
-        <List
-          sx={{ width: "100%", height: "100%" }}
-          subheader={<ListHeader />}
-          className="fixed right-0 z-20 w-[50vw] bg-gray-500"
-        >
-          <Divider />
-          {sortedMembers.map((member, index) => {
+      <List
+        sx={{
+          width: "100%",
+          height: innerWidth <= 768 ? "calc(100% - 55px)" : "100%",
+          overflowX: "hidden",
+          overflowY: "auto",
+          position: "relative",
+        }}
+        subheader={<ListHeader />}
+        className="fixed right-0 z-20 w-[50vw] bg-white-500 border"
+      >
+        <Divider />
+        {device.loaded ? (
+          sortedMembers.map((member, index) => {
             if (member === username) {
               return <OwnMember name={member} device={device} key={index} />;
             } else {
               return <Member name={member} device={device} key={index} />;
             }
-          })}
-        </List>
-      )}
+          })
+        ) : (
+          <div className="lds-roller">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+        )}
+      </List>
     </>
   );
 };
 const ListHeader = () => {
+  const innerWidth = window.innerWidth;
+  if (innerWidth <= 768) {
+    return <></>;
+  }
   return (
     <div
       className="flex justify-between font-bold align-middle"
