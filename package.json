@@ -25,6 +25,8 @@
     "@vitejs/plugin-basic-ssl": "^1.0.1",
     "axios": "^1.5.0",
     "clsx": "^2.1.0",
+    "input-otp": "^1.2.4",
+    "lucide-react": "^0.376.0",
     "mediasoup-client": "^3.7.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
