@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { Link, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import "../stylesheets/spinner.css";
 import {
   setRoomAdmins,
   setRoomId,
@@ -21,7 +22,11 @@ import Container from "@mui/material/Container";
 import MenuAppBar from "../components/MenuAppBar.jsx";
 import LinkInput from "../components/LinkInput.jsx";
 import Interactive from "../components/Interactive.jsx";
-import { joinSocketRoom, getSocket } from "../socket/socketUtils.js";
+import {
+  joinSocketRoom,
+  getSocket,
+  getSfuSocket,
+} from "../socket/socketUtils.js";
 import { fetchUser } from "../../services/helpers.js";
 import {
   setVideoId,
@@ -31,6 +36,7 @@ import {
 } from "../store/videoUrlSlice.js";
 import Snackbar from "@mui/joy/Snackbar";
 import ShareIcon from "@mui/icons-material/Share";
+import Header from "../components/Header.jsx";
 
 // This component can be accessed by user in two ways
 // 1] By visiting /room path and entering roomID
@@ -41,11 +47,14 @@ import ShareIcon from "@mui/icons-material/Share";
 
 const Main = () => {
   const socket = getSocket();
-  const [isValidUser, setIsValidUser] = useState(true);
+  const sfuSocket = getSfuSocket();
   const params = useParams();
   const dispatch = useDispatch();
   const errorRef = useRef(null);
-  const { username } = useSelector((state) => state.userInfo);
+  const { username, userRoomId } = useSelector((state) => state.userInfo);
+  const [isValidUser, setIsValidUser] = useState(() =>
+    userRoomId !== "" ? true : false
+  );
   const { socketRoomId } = useSelector((state) => state.roomInfo);
   const { isRoomValid } = useSelector((state) => state.roomInfo);
   const [showSnackbar, setShowSnackbar] = useState(isRoomValid);
@@ -55,19 +64,18 @@ const Main = () => {
   };
 
   useEffect(() => {
-    if (username === "") {
-      setIsValidUser(false);
+    if (!isValidUser) {
       (async function () {
         const reqRoomId = params.roomId;
         const res = await fetchUser(reqRoomId);
         if (res) {
           if (res.status !== 200) {
-            if (res.status === 401 || res.status === 403) {
-              setIsValidUser(false);
-            }
             if (res.status === 404) {
-              errorRef.current.textContent = `${res.msg}`;
+              errorRef.current.innerHTML = `${res.msg}. <a style="text-decoration:underline" href="/room">Create a new room</a> Or <a style="text-decoration:underline" href="/room">Join a room</a>`;
+            } else if (res.status === 401 || res.status === 403) {
+              errorRef.current.innerHTML = `Unauthorized user <br></br> Please visit the <a style="text-decoration:underline" href="/register">register</a> or <a style="text-decoration:underline" href="/login">login</a> page, to authenticate yourself`;
             }
+            setIsValidUser(false);
           }
           if (res.status === 200) {
             const {
@@ -103,7 +111,7 @@ const Main = () => {
             dispatch(setRoomMembersMicState(membersMicState));
             dispatch(setRoomMembersMuteState(membersMuteState));
 
-            socket.on("timestamp", ({ timestamp }) => {
+            socket.once("timestamp", ({ timestamp }) => {
               if (videoUrl) {
                 dispatch(setVideoStartTime(timestamp));
                 dispatch(setVideoUrl(videoUrl));
@@ -155,20 +163,27 @@ const Main = () => {
           </Snackbar>
         </Container>
       ) : (
-        <div className="flex items-center justify-center h-screen">
-          <h1 ref={errorRef}>
-            Unauthorized user <br></br>
-            Please visit the{" "}
-            <Link className="underline" to="/register">
-              register
-            </Link>{" "}
-            or{" "}
-            <Link className="underline" to="/login">
-              login
-            </Link>{" "}
-            page, to authenticate yourself
-          </h1>
-        </div>
+        <>
+          <Header />
+          <div className="flex items-center justify-center h-screen">
+            <p ref={errorRef} className="text-2xl">
+              Authenticating user, please wait...
+            </p>
+            {errorRef.current?.textContent ===
+              "Authenticating user, please wait..." && (
+              <div className="lds-roller-2">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </>
   );
