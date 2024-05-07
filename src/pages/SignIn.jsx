@@ -20,6 +20,7 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import Snackbar from "@mui/joy/Snackbar";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { useState } from "react";
+import LoadingButton from "@mui/lab/LoadingButton";
 function Copyright(props) {
   return (
     <Typography
@@ -47,10 +48,12 @@ export default function SignIn() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [isServerError, setIsServerError] = useState(false);
+  const [loading, setLoading] = useState(false);
   const handleSnackbarClose = () => {
     setIsServerError(false);
   };
   const handleSubmit = async (event) => {
+    setLoading(true);
     event.preventDefault();
     const baseUrl = import.meta.env.VITE_BACKEND_URL;
     const data = new FormData(event.currentTarget);
@@ -91,6 +94,8 @@ export default function SignIn() {
     } catch (error) {
       setIsServerError(true);
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,6 +135,7 @@ export default function SignIn() {
                 name="emailOrUsername"
                 autoComplete="email"
                 autoFocus
+                disabled={loading}
               />
               <TextField
                 margin="normal"
@@ -140,6 +146,7 @@ export default function SignIn() {
                 type="password"
                 id="password"
                 autoComplete="current-password"
+                disabled={loading}
               />
               <Typography
                 variant="h6"
@@ -149,14 +156,15 @@ export default function SignIn() {
               >
                 Invalid email or password
               </Typography>
-              <Button
+              <LoadingButton
                 type="submit"
                 fullWidth
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
+                loading={loading}
               >
                 Sign In
-              </Button>
+              </LoadingButton>
               <Grid container>
                 <Grid item xs></Grid>
                 <Grid item>
