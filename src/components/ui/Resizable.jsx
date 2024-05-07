@@ -1,12 +1,7 @@
 // Resizable component from shadcn
 import { DragHandleDots2Icon } from "@radix-ui/react-icons";
 import * as ResizablePrimitive from "react-resizable-panels";
-import { twMerge } from "tailwind-merge";
-import { clsx } from "clsx";
-
-function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from "../../../lib/utils";
 
 const ResizablePanelGroup = ({ className, ...props }) => (
   <ResizablePrimitive.PanelGroup
