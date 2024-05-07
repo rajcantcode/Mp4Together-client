@@ -32,16 +32,9 @@ export const getSfuSocket = () => {
   }
   const sfuSocket = io(sfuServerUrl, { withCredentials: true });
   sfuSocketObj.socket = sfuSocket;
-  sfuSocket.on("connect", () => {
-    console.log("sfu socket connected, " + sfuSocket.id);
-  });
   sfuSocket.on("disconnect", (reason) => {
     sfuSocketObj.socket = null;
     console.log("Sfu socket disconnected");
-  });
-  sfuSocket.on("close", (reason) => {
-    console.log("sfuSocket closed");
-    console.log(reason);
   });
   return sfuSocket;
 };
