@@ -5,9 +5,13 @@ import { authenticateUser } from "../../services/helpers";
 import "./welcome.css";
 import "../stylesheets/spinner.css";
 import Header from "../components/Header";
+import LoadingButton from "@mui/lab/LoadingButton";
+import axios from "axios";
+import { setEmail, setIsGuest, setUsername } from "../store/userSlice";
 
 const Welcome = () => {
   const [isLoading, setIsLoading] = useState(true); // State to track loading status
+  const [loadGuestLogin, setLoadGuestLogin] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -25,6 +29,35 @@ const Welcome = () => {
       }
     })();
   }, []);
+
+  const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
+  const handleGuestLogin = async () => {
+    try {
+      setLoadGuestLogin(true);
+      const response = await axios(`${baseUrl}/auth/guest`, {
+        method: "post",
+        withCredentials: true,
+        validateStatus: function (status) {
+          //Consider any status code less than 500 as a success
+          return status >= 200 && status < 500;
+        },
+      });
+      const resData = response.data;
+      if (response.status === 200) {
+        const { email, username } = resData;
+        dispatch(setUsername(username));
+        dispatch(setEmail(email));
+        dispatch(setIsGuest(true));
+        navigate("/room");
+      }
+    } catch (error) {
+      console.error(error);
+      // ToDo - display snackbar for server error
+    } finally {
+      setLoadGuestLogin(false);
+    }
+  };
 
   return (
     <div className="relative w-screen h-screen welcome-container">
@@ -54,9 +87,30 @@ const Welcome = () => {
               <Link to="/login" className="btn login-btn">
                 Login
               </Link>
-              {/* <Link to="/guest" className="btn guest-btn">
+              <LoadingButton
+                sx={{
+                  margin: "10px",
+                  padding: "10px",
+                  fontSize: "18px",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  width: "200px",
+                  transition: "background-color 0.3s, color 0.3s",
+                  backgroundColor: "#ecc03e !important",
+                  // color: "#333",
+                  fontFamily:
+                    "ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji",
+                  textTransform: "none",
+                  fontWeight: "400",
+                  ":hover": { filter: "brightness(1.1)" },
+                }}
+                variant="contained"
+                onClick={handleGuestLogin}
+                loading={loadGuestLogin}
+              >
                 Login as Guest
-              </Link> */}
+              </LoadingButton>
             </div>
           </div>
         </>

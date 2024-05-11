@@ -8,6 +8,7 @@ export const userSlice = createSlice({
     userRoomId: "",
     userSocketRoomId: "",
     isAdmin: false,
+    isGuest: false,
   },
   reducers: {
     setUsername: (state, action) => {
@@ -25,6 +26,9 @@ export const userSlice = createSlice({
     setIsAdmin: (state, action) => {
       state.isAdmin = action.payload;
     },
+    setIsGuest: (state, action) => {
+      state.isGuest = action.payload;
+    },
   },
 });
 
@@ -34,5 +38,6 @@ export const {
   setUserRoomId,
   setUserSocketRoomId,
   setIsAdmin,
+  setIsGuest,
 } = userSlice.actions;
 export default userSlice.reducer;
