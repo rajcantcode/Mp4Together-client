@@ -26,7 +26,7 @@ const Header = ({ renderProfile }) => {
   const [logoutLoading, setLogoutLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { username, email } = useSelector((state) => state.userInfo);
+  const { username, email, isGuest } = useSelector((state) => state.userInfo);
 
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -72,6 +72,14 @@ const Header = ({ renderProfile }) => {
         if (response.status === 403) {
           setEditUsernameState((prev) => {
             return { ...prev, error: resData.msg, loading: false };
+          });
+        } else if (response.status === 404) {
+          setEditUsernameState((prev) => {
+            return {
+              ...prev,
+              error: "Guest users are not alllowed to change username",
+              loading: false,
+            };
           });
         } else {
           setEditUsernameState((prev) => {
