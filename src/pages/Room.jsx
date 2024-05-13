@@ -6,6 +6,7 @@ import { authenticateUser } from "../../services/helpers";
 import {
   setEmail,
   setIsAdmin,
+  setIsGuest,
   setUserRoomId,
   setUserSocketRoomId,
   setUsername,
@@ -28,18 +29,8 @@ import { Box } from "@mui/material";
 import { styled } from "@mui/joy/styles";
 import Input from "@mui/joy/Input";
 import SendIcon from "@mui/icons-material/Send";
-import {
-  joinSocketRoom,
-  getSocket,
-  getSfuSocket,
-} from "../socket/socketUtils.js";
 import axios from "axios";
-import {
-  setVideoId,
-  setVideoStartTime,
-  setVideoUrl,
-  setVideoUrlValidity,
-} from "../store/videoUrlSlice";
+import { setVideoUrl } from "../store/videoUrlSlice";
 // import "./Room.css";
 
 const StyledInput = styled("input")({
@@ -105,10 +96,8 @@ const InnerInput = React.forwardRef(function InnerInput(props, ref) {
 });
 
 const Room = () => {
-  const socket = getSocket();
-  const sfuSocket = getSfuSocket();
   const dispatch = useDispatch();
-  const [isLoading, setIsLoading] = useState(true); // State to track loading status
+  const [isLoading, setIsLoading] = useState(true); // State to track modal loading status
 
   useEffect(() => {
     (async () => {
@@ -199,10 +188,14 @@ const Room = () => {
         return;
       }
       if (response.status === 200) {
-        const { roomId, socketRoomId, members, admins, membersMicState } =
-          resData;
-        // Join the socket room
-        joinSocketRoom(socketRoomId, socket, username);
+        const {
+          roomId,
+          socketRoomId,
+          members,
+          admins,
+          membersMicState,
+          guest,
+        } = resData;
 
         // Send a request to sfu server to create a router for the new room
         await createRouter(socketRoomId);
@@ -221,18 +214,19 @@ const Room = () => {
 
         // Since the user created the room, they are the admin
         dispatch(setIsAdmin(true));
+        dispatch(setIsGuest(guest));
 
         navigate(`/room/${roomId}`);
       }
     } catch (error) {
       // ToDo -> Handle server errrors
+      console.error(error);
       dispatch(
         setKickSnackbarInfo({
           show: true,
           title: "Unable to create room at the moment. Please try again later",
         })
       );
-      console.error(error);
     } finally {
       setDisabledStatus({ joinBtn: false, createBtn: false, sendBtn: false });
       setLoadingStatus({ joinBtn: false, createBtn: false, sendBtn: false });
@@ -313,7 +307,6 @@ const Room = () => {
             membersMicState,
           } = resData;
 
-          joinSocketRoom(socketRoomId, socket, username);
           const membersMuteState = {};
           members.forEach((member) => {
             if (member !== username) {
@@ -333,24 +326,9 @@ const Room = () => {
           dispatch(setUsername(username));
           dispatch(setEmail(email));
 
-          socket.once("timestamp", ({ timestamp }) => {
-            if (!videoUrl || videoUrl === "") {
-              setErrorMsg("");
-              setRoomLink("");
-              navigate(`/room/${roomId}`);
-              return;
-            }
-            dispatch(setVideoStartTime(timestamp));
+          if (videoUrl) {
             dispatch(setVideoUrl(videoUrl));
-            dispatch(setVideoId(videoUrl ? videoUrl.split("/embed/")[1] : 0));
-            dispatch(setVideoUrlValidity(true));
-          });
-          socket.emit("join-room", {
-            room: socketRoomId,
-            username: username,
-            mainRoomId: roomId,
-            admin: admins[0],
-          });
+          }
 
           setErrorMsg("");
           setRoomLink("");
