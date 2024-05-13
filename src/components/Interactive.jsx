@@ -13,7 +13,7 @@ import MemberList from "./MemberList";
 import { useState } from "react";
 import "../stylesheets/videoPlayer.css";
 
-const Interactive = () => {
+const Interactive = ({ socket, sfuSocket }) => {
   const { videoUrlValidity } = useSelector((state) => state.videoUrl);
   const [showChat, setShowChat] = useState(true);
   const innerWidth = window.innerWidth;
@@ -30,7 +30,7 @@ const Interactive = () => {
         id="video-panel"
         className="bg-orange-500"
       >
-        {videoUrlValidity && <VideoPlayer />}
+        {videoUrlValidity && <VideoPlayer socket={socket} />}
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel
@@ -67,24 +67,24 @@ const Interactive = () => {
                 className="w-full h-full"
                 style={{ display: showChat ? "block" : "none" }}
               >
-                <ChatBox />
+                <ChatBox socket={socket} />
               </div>
               <div
                 className="w-full h-full"
                 style={{ display: showChat ? "none" : "block" }}
               >
-                <MemberList />
+                <MemberList socket={socket} sfuSocket={sfuSocket} />
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
           <ResizablePanelGroup direction={"vertical"}>
             <ResizablePanel defaultSize={50} minSize={30}>
-              <ChatBox />
+              <ChatBox socket={socket} />
             </ResizablePanel>
             <ResizableHandle />
             <ResizablePanel defaultSize={50} minSize={30}>
-              <MemberList />
+              <MemberList socket={socket} sfuSocket={sfuSocket} />
             </ResizablePanel>
           </ResizablePanelGroup>
         )}

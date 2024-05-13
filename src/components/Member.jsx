@@ -7,12 +7,9 @@ import MicOffIcon from "@mui/icons-material/MicOff";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getSfuSocket, getSocket } from "../socket/socketUtils";
 import { setRoomMembersMicState } from "../store/roomSlice";
 
-const Member = ({ name, device }) => {
-  const sfuSocket = getSfuSocket();
-  const socket = getSocket();
+const Member = ({ name, device, socket, sfuSocket }) => {
   const { admins, membersMicState, membersMuteState, socketRoomId, roomId } =
     useSelector((state) => state.roomInfo);
   const { username, isAdmin } = useSelector((state) => state.userInfo);
@@ -28,6 +25,7 @@ const Member = ({ name, device }) => {
   useEffect(() => {
     // Warning - Callback hell ahead 💀💀💀
     if (!transport) {
+      if (!sfuSocket) return;
       sfuSocket.emit(
         "createRtcTransport",
         { username, joiner: name },
@@ -75,7 +73,7 @@ const Member = ({ name, device }) => {
       );
     }
     const handleMicOnOffEvent = ({ username: sender, status }) => {
-      if (sender !== name) return;
+      if (sender !== name || !socket) return;
       // Here status, which is a boolean value indicates the mic status of the "sender" who has sent the event
       if (mutedRef.current) {
         dispatch(setRoomMembersMicState([sender, status]));
@@ -106,7 +104,7 @@ const Member = ({ name, device }) => {
       transport?.close();
       consumer?.close();
     };
-  }, []);
+  }, [socket, sfuSocket]);
 
   useEffect(() => {
     transportRef.current = transport;
@@ -118,7 +116,7 @@ const Member = ({ name, device }) => {
   }, [muted, consumer]);
 
   const handleMic = () => {
-    if (!isAdmin || !membersMicState[name]) {
+    if (!isAdmin || !membersMicState[name] || !socket) {
       return;
     }
     socket.emit("mic-on-off", {
@@ -155,6 +153,7 @@ const Member = ({ name, device }) => {
   };
 
   const createConsumer = () => {
+    if (!sfuSocket) return;
     sfuSocket.emit(
       "consume",
       {
@@ -206,6 +205,7 @@ const Member = ({ name, device }) => {
   };
 
   const pauseConsumer = () => {
+    if (!sfuSocket) return;
     consumerRef.current.pause();
     sfuSocket.emit(
       "pause-consumer",
@@ -224,6 +224,7 @@ const Member = ({ name, device }) => {
   };
 
   const resumeConsumer = () => {
+    if (!sfuSocket) return;
     consumerRef.current.resume();
     sfuSocket.emit(
       "resume-consumer",
@@ -243,7 +244,7 @@ const Member = ({ name, device }) => {
   };
 
   const handleRemoveMember = () => {
-    if (!isAdmin) return;
+    if (!isAdmin || !socket) return;
     socket.emit(
       "remove-member",
       {

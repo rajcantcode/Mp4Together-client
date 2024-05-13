@@ -4,15 +4,11 @@ import GroupIcon from "@mui/icons-material/Group";
 import CloseIcon from "@mui/icons-material/Close";
 import OwnMember from "./OwnMember";
 import Member from "./Member";
-import { getSfuSocket, getSocket } from "../socket/socketUtils";
 import { Device } from "mediasoup-client";
 import { useSelector } from "react-redux";
 import { useState, useEffect } from "react";
 
-const MemberList = () => {
-  const socket = getSocket();
-  const sfuSocket = getSfuSocket();
-  // const [isOpen, setIsOpen] = useState(false);
+const MemberList = ({ socket, sfuSocket }) => {
   const [device, setDevice] = useState(new Device());
   const {
     members,
@@ -38,6 +34,7 @@ const MemberList = () => {
   const innerWidth = window.innerWidth;
 
   useEffect(() => {
+    if (!socket || !sfuSocket) return;
     const handleUserJoin = ({ members, admins, membersMicState, joiner }) => {
       setSortedMembers((prevMembers) => [...prevMembers, joiner]);
     };
@@ -48,7 +45,6 @@ const MemberList = () => {
       });
     };
     try {
-      console.dir(sfuSocket);
       sfuSocket.emit("getRtpCapabilities", { socketRoomId }, async (params) => {
         if (params.error) {
           throw params.error;
@@ -69,7 +65,7 @@ const MemberList = () => {
       socket.off("join-msg", handleUserJoin);
       socket.off("exit-msg", handleUserExit);
     };
-  }, []);
+  }, [socket, sfuSocket]);
 
   useEffect(() => {
     setSortedMembers((prevMembers) => {
@@ -86,14 +82,6 @@ const MemberList = () => {
       return newMembers;
     });
   }, [admins]);
-
-  const handleClick = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const handleClickAway = () => {
-    setIsOpen(false);
-  };
 
   return (
     <>
@@ -112,9 +100,25 @@ const MemberList = () => {
         {device.loaded ? (
           sortedMembers.map((member, index) => {
             if (member === username) {
-              return <OwnMember name={member} device={device} key={index} />;
+              return (
+                <OwnMember
+                  name={member}
+                  device={device}
+                  socket={socket}
+                  sfuSocket={sfuSocket}
+                  key={index}
+                />
+              );
             } else {
-              return <Member name={member} device={device} key={index} />;
+              return (
+                <Member
+                  name={member}
+                  device={device}
+                  socket={socket}
+                  sfuSocket={sfuSocket}
+                  key={index}
+                />
+              );
             }
           })
         ) : (
