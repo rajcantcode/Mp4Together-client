@@ -4,14 +4,12 @@ import { useSelector } from "react-redux";
 import "../stylesheets/videoPlayer.css";
 // Base styles for media player and provider (~400B).
 import ReactPlayer from "react-player/youtube";
-import { getSocket } from "../socket/socketUtils.js";
 
 // Default behaviour -
 // Admin will cotrol the video, ie : if admin pauses the videos of other members also pauses and if admin skips forward ....
 // Other users can pause, play but that will not effect other members in the room.
 
-const VideoPlayer = () => {
-  const socket = getSocket();
+const VideoPlayer = ({ socket }) => {
   const { videoId, videoUrl, startTime } = useSelector(
     (state) => state.videoUrl
   );
@@ -34,15 +32,17 @@ const VideoPlayer = () => {
   const videoRef = useRef(null);
 
   useEffect(() => {
+    if (!socket) return;
     if (isAdmin) {
       socket.on("get-timestamp", emitTimestamp);
       return () => {
         socket.off("get-timestamp", emitTimestamp);
       };
     }
-  }, [isAdmin]);
+  }, [isAdmin, socket]);
 
   useEffect(() => {
+    if (socket === null) return;
     socket.on("server-pause-video", handlePauseEvent);
     socket.on("server-play-video", handlePlayEvent);
     socket.on("timestamp", handleTimestamp);
@@ -53,7 +53,7 @@ const VideoPlayer = () => {
       socket.off("timestamp", handleTimestamp);
       socket.off("receive-playback-rate", handlePlaybackEvent);
     };
-  }, []);
+  }, [socket]);
   const handlePauseEvent = (data) => {
     setExecuteHandlePauseVideo(false);
     setIsPlaying(false);
@@ -75,6 +75,7 @@ const VideoPlayer = () => {
   };
 
   const emitTimestamp = ({ requester }) => {
+    if (!socket) return;
     const timestamp = Math.trunc(videoRef.current.getCurrentTime());
     socket.on("received-timestamp", () => {
       setIsTimestamp(true);
@@ -91,6 +92,7 @@ const VideoPlayer = () => {
   };
 
   const handlePlayVideo = () => {
+    if (!socket) return;
     if (isTimestamp) {
       setIsTimestamp(false);
       return;
@@ -114,6 +116,7 @@ const VideoPlayer = () => {
   };
 
   const handlePauseVideo = () => {
+    if (!socket) return;
     if (!executeHandlePauseVideo) {
       setExecuteHandlePauseVideo(true);
       return;
@@ -128,6 +131,7 @@ const VideoPlayer = () => {
   };
 
   const handlePlaybackVideo = (speed) => {
+    if (!socket) return;
     if (isAdmin) {
       socket.emit("send-playback-rate", {
         speed,

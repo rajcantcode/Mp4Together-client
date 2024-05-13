@@ -32,15 +32,12 @@ import {
 } from "../store/userSlice";
 import { setKickSnackbarInfo } from "../store/roomSlice.js";
 
-import { getSfuSocket, getSocket } from "../socket/socketUtils.js";
 import { resetRoomSlice, resetVideoSlice } from "../../services/helpers";
 import { useState, useRef } from "react";
 
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
 
-function MenuAppBar() {
-  const socket = getSocket();
-  const sfuSocket = getSfuSocket();
+function MenuAppBar({ socket, sfuSocket }) {
   const [anchorElNav, setAnchorElNav] = useState(null);
   const [anchorElUser, setAnchorElUser] = useState(null);
   const [exitLoading, setExitLoading] = useState(false);
@@ -58,6 +55,7 @@ function MenuAppBar() {
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
+    if (!socket) return;
     const kick = async ({ admin }) => {
       const exitSuccess = await exitRoom(false);
       if (exitSuccess) {
@@ -78,7 +76,7 @@ function MenuAppBar() {
       }
       socket.off("exit", kick);
     };
-  }, []);
+  }, [socket]);
 
   useEffect(() => {
     shouldExitRef.current = shouldExit;
@@ -136,7 +134,6 @@ function MenuAppBar() {
           mainRoomId: roomId,
         });
         sfuSocket.emit("close-transports", { leaver: username, socketRoomId });
-        sfuSocket.close();
         navigateToRoom && navigate("/room");
         return true;
       }

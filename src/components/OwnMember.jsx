@@ -4,12 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import MicIcon from "@mui/icons-material/Mic";
 import MicOffIcon from "@mui/icons-material/MicOff";
-import { getSfuSocket, getSocket } from "../socket/socketUtils";
 import { setRoomMembersMicState } from "../store/roomSlice";
 
-const OwnMember = ({ name, device }) => {
-  const sfuSocket = getSfuSocket();
-  const socket = getSocket();
+const OwnMember = ({ name, device, socket, sfuSocket }) => {
   const { membersMicState, socketRoomId, roomId } = useSelector(
     (state) => state.roomInfo
   );
@@ -24,6 +21,7 @@ const OwnMember = ({ name, device }) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    if (!socket || !sfuSocket) return;
     const handleMicOnOffEvent = ({ username: sender, status }) => {
       // Here status, which is a boolean value indicates the mic status of the participant who has sent the event
       if (sender !== name) return;
@@ -109,7 +107,7 @@ const OwnMember = ({ name, device }) => {
       audioTrackRef.current?.stop();
       socket.off("mic-on-off-event", handleMicOnOffEvent);
     };
-  }, []);
+  }, [socket, sfuSocket]);
 
   useEffect(() => {
     transportRef.current = transport;
@@ -121,6 +119,7 @@ const OwnMember = ({ name, device }) => {
   }, [audioTrack, producer]);
 
   const handleMic = async () => {
+    if (!socket || !sfuSocket) return;
     try {
       if (micOn && audioTrack && producer) {
         // User wants to turn off their mic

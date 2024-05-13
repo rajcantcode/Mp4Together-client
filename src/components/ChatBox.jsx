@@ -18,7 +18,6 @@ import {
 } from "@chatscope/chat-ui-kit-react";
 
 // Socket.io import
-import { getSfuSocket, getSocket } from "../socket/socketUtils.js";
 import { sendMessage } from "../socket/socketUtils.js";
 
 // Redux imports
@@ -31,7 +30,7 @@ import {
 } from "../store/roomSlice";
 import { setIsAdmin } from "../store/userSlice";
 
-const ChatBox = () => {
+const ChatBox = ({ socket }) => {
   const [msgArray, setMsgArray] = useState([]);
 
   const room = useSelector((state) => state.roomInfo.socketRoomId);
@@ -39,12 +38,11 @@ const ChatBox = () => {
   const username = useSelector((state) => state.userInfo.username);
   const members = useSelector((state) => state.roomInfo.members);
 
-  const socket = getSocket();
-  const sfuSocket = getSfuSocket();
   const dispatch = useDispatch();
 
   const innerWidth = window.innerWidth;
   useEffect(() => {
+    if (!socket) return;
     const handleJoinMsg = ({
       msgObj,
       members,
@@ -91,28 +89,20 @@ const ChatBox = () => {
       console.error("Connection error:", error);
     };
 
-    const handleConnectionTimeout = (timeout) => {
-      console.error("Connection timeout:", timeout);
-      // Handle the timeout here
-      socket.connect();
-    };
-
     // Receive and display messages
     socket.on("receive-message", handleReceiveMessage);
     socket.on("join-msg", handleJoinMsg);
     socket.on("exit-msg", handleExitMessage);
 
     socket.on("connect_error", handleConnectError);
-    socket.on("connect_timeout", handleConnectionTimeout);
 
     return () => {
       socket.off("receive-message", handleReceiveMessage);
       socket.off("join-msg", handleJoinMsg);
       socket.off("exit-msg", handleExitMessage);
       socket.off("connect_error", handleConnectError);
-      socket.off("connect_timeout", handleConnectionTimeout);
     };
-  }, []);
+  }, [socket]);
 
   let prevSender = "";
 

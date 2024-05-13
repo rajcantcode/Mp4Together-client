@@ -15,14 +15,12 @@ import {
   setVideoStartTime,
   setVideoUrl,
 } from "../store/videoUrlSlice";
-import { getSocket } from "../socket/socketUtils.js";
 import axios, { AxiosError } from "axios";
 import { resetVideoSlice } from "../../services/helpers";
 import { useParams } from "react-router-dom";
 import MemberList from "./MemberList.jsx";
 
-export default function LinkInput() {
-  const socket = getSocket();
+export default function LinkInput({ socket }) {
   const [inpVideoUrl, setInpVideoUrl] = useState("");
   const { isAdmin, username } = useSelector((state) => state.userInfo);
 
@@ -33,6 +31,7 @@ export default function LinkInput() {
   const [serverErrorMessage, setServerErrorMessage] = useState("");
 
   useEffect(() => {
+    if (!socket) return;
     const handleNewVideoUrl = ({ videoUrl, videoId, startTime }) => {
       dispatch(setVideoUrl(videoUrl));
       dispatch(setVideoId(videoId));
