@@ -12,7 +12,7 @@ import {
   setVideoUrl,
   setVideoUrlValidity,
 } from "../src/store/videoUrlSlice";
-import { setUsername, setEmail } from "../src/store/userSlice";
+import { setUsername, setEmail, setIsGuest } from "../src/store/userSlice";
 import axios from "axios";
 
 export const authenticateUser = async function (dispatch) {
@@ -28,9 +28,10 @@ export const authenticateUser = async function (dispatch) {
 
     if (response.status === 200) {
       const resData = response.data;
-      const { email, username } = resData;
+      const { email, username, guest } = resData;
       dispatch(setUsername(username));
       dispatch(setEmail(email));
+      dispatch(setIsGuest(guest));
       //   navigate(`/room`);
       return { status: 200 };
     } else {
@@ -113,6 +114,7 @@ export const fetchUser = async (reqRoomId) => {
         email,
         videoUrl,
         membersMicState,
+        guest,
       } = resData;
 
       return {
@@ -125,6 +127,7 @@ export const fetchUser = async (reqRoomId) => {
         email,
         videoUrl,
         membersMicState,
+        guest,
       };
     }
   } catch (error) {
