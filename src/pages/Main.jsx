@@ -56,10 +56,9 @@ const Main = () => {
   const [isValidUser, setIsValidUser] = useState(() =>
     userRoomId !== "" ? true : false
   );
-  const { socketRoomId, roomId, admins } = useSelector(
+  const { socketRoomId, roomId, admins, isRoomValid } = useSelector(
     (state) => state.roomInfo
   );
-  const { isRoomValid } = useSelector((state) => state.roomInfo);
   const [showSnackbar, setShowSnackbar] = useState(isRoomValid);
 
   const handleSnackbarClose = () => {
@@ -124,7 +123,6 @@ const Main = () => {
         }
       }
     })();
-    return () => {};
   }, []);
 
   useEffect(() => {
@@ -136,6 +134,10 @@ const Main = () => {
     // ToDo - Handle socket connection error
     const socket = io(baseUrl, {
       withCredentials: true,
+      query: {
+        mainRoomId: roomId,
+        socketRoomId,
+      },
     });
     const sfuSocket = io(sfuServerUrl, { withCredentials: true });
 
