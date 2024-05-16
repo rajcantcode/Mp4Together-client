@@ -227,7 +227,7 @@ export default function SignUp() {
     try {
       setLoading(true);
       const baseUrl = import.meta.env.VITE_BACKEND_URL;
-      const response = await axios.put(
+      const response = await axios.post(
         `${baseUrl}/auth/verify`,
         { email, otp },
         {
