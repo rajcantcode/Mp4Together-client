@@ -12,7 +12,7 @@ export const roomSlice = createSlice({
     isSocketRoomValid: true,
     membersMicState: {},
     membersMuteState: {},
-    kickSnackbarInfo: { show: false, title: "" },
+    kickSnackbarInfo: { show: false, title: "", color: "neutral" },
   },
   reducers: {
     setRoomId: (state, action) => {
