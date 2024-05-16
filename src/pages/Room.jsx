@@ -225,6 +225,7 @@ const Room = () => {
         setKickSnackbarInfo({
           show: true,
           title: "Unable to create room at the moment. Please try again later",
+          color: "danger",
         })
       );
     } finally {
@@ -362,7 +363,7 @@ const Room = () => {
   };
 
   const handleSnackbarClose = () => {
-    dispatch(setKickSnackbarInfo({ show: false, title: "" }));
+    dispatch(setKickSnackbarInfo({ show: false, title: "", color: "neutral" }));
   };
 
   return (
@@ -483,7 +484,7 @@ const Room = () => {
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         autoHideDuration={3000}
         open={kickSnackbarInfo.show}
-        color="danger"
+        color={kickSnackbarInfo.color}
         variant="solid"
         onClose={handleSnackbarClose}
         startDecorator={<ErrorOutlineIcon />}
