@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 import { useState, useEffect } from "react";
 
 const MemberList = ({ socket, sfuSocket }) => {
-  const [device, setDevice] = useState(new Device());
+  const [device, setDevice] = useState(null);
   const {
     members,
     admins,
@@ -50,9 +50,10 @@ const MemberList = ({ socket, sfuSocket }) => {
           throw params.error;
         }
         const { rtpCapabilities } = params;
-        if (!device.loaded) {
-          await device.load({ routerRtpCapabilities: rtpCapabilities });
-          setDevice(device);
+        if (!device) {
+          const localDevice = new Device();
+          await localDevice.load({ routerRtpCapabilities: rtpCapabilities });
+          setDevice(localDevice);
         }
       });
       socket.on("join-msg", handleUserJoin);
@@ -97,7 +98,7 @@ const MemberList = ({ socket, sfuSocket }) => {
         className="fixed right-0 z-20 w-[50vw] bg-white-500 border"
       >
         <Divider />
-        {device.loaded ? (
+        {device?.loaded ? (
           sortedMembers.map((member, index) => {
             if (member === username) {
               return (
