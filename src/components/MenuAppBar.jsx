@@ -63,6 +63,7 @@ function MenuAppBar({ socket, sfuSocket }) {
           setKickSnackbarInfo({
             show: true,
             title: `You were kicked by ${admin}`,
+            color: "danger",
           })
         );
         navigate("/room");
@@ -128,12 +129,6 @@ function MenuAppBar({ socket, sfuSocket }) {
         dispatch(setUserSocketRoomId(""));
         dispatch(setIsAdmin(false));
 
-        socket.emit("exit-room", {
-          room: socketRoomId,
-          username: username,
-          mainRoomId: roomId,
-        });
-        sfuSocket.emit("close-transports", { leaver: username, socketRoomId });
         navigateToRoom && navigate("/room");
         return true;
       }
