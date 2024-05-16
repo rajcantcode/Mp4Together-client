@@ -8,6 +8,7 @@ import Header from "../components/Header";
 import LoadingButton from "@mui/lab/LoadingButton";
 import axios from "axios";
 import { setEmail, setIsGuest, setUsername } from "../store/userSlice";
+import { setKickSnackbarInfo } from "../store/roomSlice";
 
 const Welcome = () => {
   const [isLoading, setIsLoading] = useState(true); // State to track loading status
@@ -49,6 +50,13 @@ const Welcome = () => {
         dispatch(setUsername(username));
         dispatch(setEmail(email));
         dispatch(setIsGuest(true));
+        dispatch(
+          setKickSnackbarInfo({
+            show: true,
+            title: "Guest accounts are only valid for one hour",
+            color: "success",
+          })
+        );
         navigate("/room");
       }
     } catch (error) {
