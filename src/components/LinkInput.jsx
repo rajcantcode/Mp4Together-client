@@ -27,7 +27,6 @@ export default function LinkInput({ socket }) {
   const { roomId } = useParams();
   const { socketRoomId } = useSelector((state) => state.roomInfo);
   const dispatch = useDispatch();
-  const [isServerError, setIsServerError] = useState(false);
   const [serverErrorMessage, setServerErrorMessage] = useState("");
 
   useEffect(() => {
@@ -48,7 +47,7 @@ export default function LinkInput({ socket }) {
   // }, [isAdmin]);
 
   const handleSnackbarClose = () => {
-    setIsServerError(false);
+    setServerErrorMessage("");
   };
   const validateVideoUrl = async (url) => {
     try {
@@ -114,13 +113,11 @@ export default function LinkInput({ socket }) {
       resetVideoSlice(dispatch);
       if (error instanceof AxiosError && error.code === "ERR_BAD_REQUEST") {
         // Display toast that the URL is invalid
-        setIsServerError(true);
         setServerErrorMessage("No such Video exists");
         return;
       }
       if (error instanceof Error) {
         // Display toast with message received from server
-        setIsServerError(true);
         setServerErrorMessage(error.message);
         return;
       }
@@ -186,7 +183,7 @@ export default function LinkInput({ socket }) {
       <Snackbar
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         autoHideDuration={3000}
-        open={isServerError}
+        open={serverErrorMessage !== ""}
         color="danger"
         variant="solid"
         onClose={handleSnackbarClose}
