@@ -163,3 +163,54 @@ export const verifyUsername = (username) => {
     console.error(error);
   }
 };
+
+export const openFileSelector = async (accept) => {
+  return new Promise((resolve, reject) => {
+    const inputEl = document.createElement("input");
+    inputEl.type = "file";
+    inputEl.multiple = false;
+    if (accept) inputEl.accept = accept;
+
+    const videoEl = document.createElement("video");
+    videoEl.style.display = "none";
+    document.body.appendChild(videoEl);
+
+    inputEl.addEventListener("change", () => {
+      const file = inputEl.files[0];
+      if (file) {
+        const fileExtension = file.name.split(".").pop().toLowerCase();
+        if (
+          file.type.startsWith("video/") ||
+          ["mp4", "webm", "ogg", "mkv"].includes(fileExtension)
+        ) {
+          const url = URL.createObjectURL(file);
+          videoEl.src = url;
+          videoEl.addEventListener("canplay", () => {
+            resolve({ file });
+            URL.revokeObjectURL(url);
+            document.body.removeChild(videoEl);
+          });
+          videoEl.addEventListener("error", () => {
+            reject(new Error("Selected file is not a valid video file"));
+            URL.revokeObjectURL(url);
+            document.body.removeChild(videoEl);
+          });
+        } else {
+          reject(new Error("Selected file is not a video file"));
+        }
+      }
+    });
+    inputEl.click();
+  });
+};
+
+export const startFileShare = async () => {
+  try {
+    const { file } = await openFileSelector("video/*");
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    return url;
+  } catch (error) {
+    throw error;
+  }
+};
