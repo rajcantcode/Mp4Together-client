@@ -253,15 +253,14 @@ function MenuAppBar({ socket, sfuSocket }) {
             <Box
               sx={{
                 display: "flex",
-                width: { xs: "40%", md: "fit-content" },
-                justifyContent: "space-between",
+                // width: { xs: "fit-content", md: "40%" },
+                width: "40%",
+                justifyContent: "flex-end",
               }}
             >
               <Tooltip title="Copy room link">
-                <IconButton onClick={copyRoomLink}>
-                  <FileCopyIcon
-                    sx={{ color: "yellow", margin: { xs: 0, md: "0 10px" } }}
-                  />
+                <IconButton onClick={copyRoomLink} sx={{ marginRight: "1rem" }}>
+                  <FileCopyIcon sx={{ color: "yellow" }} />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Exit room">
@@ -276,8 +275,9 @@ function MenuAppBar({ socket, sfuSocket }) {
                   sx={{
                     display: "inline-flex",
                     minWidth: "30px",
-                    margin: { xs: 0, md: "0 10px" },
+                    marginRight: "1rem",
                   }}
+                  className="mr-2"
                 >
                   <Typography sx={{ display: { xs: "none", md: "inline" } }}>
                     Exit Room
@@ -285,7 +285,11 @@ function MenuAppBar({ socket, sfuSocket }) {
                 </LoadingButton>
               </Tooltip>
               <Tooltip title="Open details">
-                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                <IconButton
+                  onClick={handleOpenUserMenu}
+                  sx={{ p: 0, marginRight: "1rem" }}
+                  className="mr-2"
+                >
                   {/* Use this to change profile photo */}
                   <Avatar
                     alt={username.charAt(0).toUpperCase() + username.slice(1)}
