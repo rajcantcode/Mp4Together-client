@@ -10,13 +10,23 @@ import PeopleIcon from "@mui/icons-material/People";
 import VideoPlayer from "./VideoPlayer";
 import ChatBox from "./ChatBox";
 import MemberList from "./MemberList";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../stylesheets/videoPlayer.css";
 
 const Interactive = ({ socket, sfuSocket }) => {
   const { videoUrlValidity } = useSelector((state) => state.videoUrl);
   const [showChat, setShowChat] = useState(true);
-  const innerWidth = window.innerWidth;
+  const [innerWidth, setInnerWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setInnerWidth(window.innerWidth);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   return (
     <ResizablePanelGroup
@@ -25,12 +35,12 @@ const Interactive = ({ socket, sfuSocket }) => {
     >
       <ResizablePanel
         defaultSize={innerWidth <= 768 ? 40 : 70}
-        // minSize={50}
         minSize={innerWidth <= 768 ? 30 : 50}
         id="video-panel"
-        className="bg-orange-500"
+        className="bg-black"
       >
-        {videoUrlValidity && <VideoPlayer socket={socket} />}
+        {/* {videoUrlValidity && <VideoPlayer socket={socket} />} */}
+        <VideoPlayer socket={socket} />
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel
@@ -67,24 +77,32 @@ const Interactive = ({ socket, sfuSocket }) => {
                 className="w-full h-full"
                 style={{ display: showChat ? "block" : "none" }}
               >
-                <ChatBox socket={socket} />
+                <ChatBox socket={socket} innerWidth={innerWidth} />
               </div>
               <div
                 className="w-full h-full"
                 style={{ display: showChat ? "none" : "block" }}
               >
-                <MemberList socket={socket} sfuSocket={sfuSocket} />
+                <MemberList
+                  socket={socket}
+                  sfuSocket={sfuSocket}
+                  innerWidth={innerWidth}
+                />
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
           <ResizablePanelGroup direction={"vertical"}>
             <ResizablePanel defaultSize={50} minSize={30}>
-              <ChatBox socket={socket} />
+              <ChatBox socket={socket} innerWidth={innerWidth} />
             </ResizablePanel>
             <ResizableHandle />
             <ResizablePanel defaultSize={50} minSize={30}>
-              <MemberList socket={socket} sfuSocket={sfuSocket} />
+              <MemberList
+                socket={socket}
+                sfuSocket={sfuSocket}
+                innerWidth={innerWidth}
+              />
             </ResizablePanel>
           </ResizablePanelGroup>
         )}

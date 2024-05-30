@@ -30,7 +30,7 @@ import {
 } from "../store/roomSlice";
 import { setIsAdmin } from "../store/userSlice";
 
-const ChatBox = ({ socket }) => {
+const ChatBox = ({ socket, innerWidth }) => {
   const [msgArray, setMsgArray] = useState([]);
 
   const room = useSelector((state) => state.roomInfo.socketRoomId);
@@ -40,7 +40,6 @@ const ChatBox = ({ socket }) => {
 
   const dispatch = useDispatch();
 
-  const innerWidth = window.innerWidth;
   useEffect(() => {
     if (!socket) return;
     const handleJoinMsg = ({

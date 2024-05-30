@@ -8,7 +8,7 @@ import { Device } from "mediasoup-client";
 import { useSelector } from "react-redux";
 import { useState, useEffect } from "react";
 
-const MemberList = ({ socket, sfuSocket }) => {
+const MemberList = ({ socket, sfuSocket, innerWidth }) => {
   const [device, setDevice] = useState(null);
   const {
     members,
@@ -30,8 +30,6 @@ const MemberList = ({ socket, sfuSocket }) => {
     });
     return sortedMembers;
   });
-
-  const innerWidth = window.innerWidth;
 
   useEffect(() => {
     if (!socket || !sfuSocket) return;
@@ -94,7 +92,7 @@ const MemberList = ({ socket, sfuSocket }) => {
           overflowY: "auto",
           position: "relative",
         }}
-        subheader={<ListHeader />}
+        subheader={<ListHeader innerWidth={innerWidth} />}
         className="fixed right-0 z-20 w-[50vw] bg-white-500 border"
       >
         <Divider />
@@ -138,8 +136,7 @@ const MemberList = ({ socket, sfuSocket }) => {
     </>
   );
 };
-const ListHeader = () => {
-  const innerWidth = window.innerWidth;
+const ListHeader = ({ innerWidth }) => {
   if (innerWidth <= 768) {
     return <></>;
   }
