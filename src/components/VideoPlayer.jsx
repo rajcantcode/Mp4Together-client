@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 
 import "../stylesheets/videoPlayer.css";
 // Base styles for media player and provider (~400B).
 import ReactPlayer from "react-player/youtube";
+import Peer from "peerjs";
+import { setVideoUrlValidity } from "../store/videoUrlSlice";
 
 // Default behaviour -
 // Admin will cotrol the video, ie : if admin pauses the videos of other members also pauses and if admin skips forward ....
 // Other users can pause, play but that will not effect other members in the room.
 
 const VideoPlayer = ({ socket }) => {
-  const { videoId, videoUrl, startTime } = useSelector(
+  const { videoId, videoUrl, startTime, videoUrlValidity } = useSelector(
     (state) => state.videoUrl
   );
   const { socketRoomId, admins, roomId } = useSelector(
@@ -20,8 +24,9 @@ const VideoPlayer = ({ socket }) => {
 
   // Video player state
   const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   // Video playback state
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [playbackSpeed, setPlaybackSpeed] = useState({ speed: 1 });
 
   // The below two state variables solely exist to determine whether "handlePlayVideo" and "handlePauseVideo" function should execute or not.
   // Since I am using "isPlaying" to pause or play the video, and changing state of "isPlaying" leads to calling "handlePlayVideo" or "handlePauseVideo" depending upon value of "isPlaying", which causes infinite loop in those functions.
@@ -30,6 +35,12 @@ const VideoPlayer = ({ socket }) => {
   const [executeHandlePauseVideo, setExecuteHandlePauseVideo] = useState(true);
 
   const videoRef = useRef(null);
+  const frontEndUrl = import.meta.env.VITE_FRONTEND_URL;
+  const [peer, setPeer] = useState(null);
+  const [stream, setStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (!socket) return;
@@ -42,52 +53,222 @@ const VideoPlayer = ({ socket }) => {
   }, [isAdmin, socket]);
 
   useEffect(() => {
-    if (socket === null) return;
+    if (!socket) return;
     socket.on("server-pause-video", handlePauseEvent);
     socket.on("server-play-video", handlePlayEvent);
     socket.on("timestamp", handleTimestamp);
     socket.on("receive-playback-rate", handlePlaybackEvent);
+    socket.on("conn-peer-server", connectToPeerServer);
     return () => {
       socket.off("server-pause-video", handlePauseEvent);
       socket.off("server-play-video", handlePlayEvent);
       socket.off("timestamp", handleTimestamp);
       socket.off("receive-playback-rate", handlePlaybackEvent);
+      socket.off("conn-peer-server", connectToPeerServer);
     };
   }, [socket]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    try {
+      if (!videoUrl && peer) {
+        peer.destroy();
+        setPeer(null);
+        // send socket event to server, to let other participants know to destroy their peer connection
+        socket.emit("dest-peer");
+        return;
+      }
+      if (!videoUrl.startsWith("blob:") && peer) {
+        peer.destroy();
+        setPeer(null);
+        // send socket event to server, to let other participants know to destroy their peer connection
+        socket.emit("dest-peer");
+        return;
+      }
+
+      if (videoUrl.startsWith("blob:") && peer) {
+        socket.emit("create-peer-conn");
+      }
+
+      if (!videoUrl.startsWith("blob:") || peer) return;
+
+      const serverUrl = import.meta.env.VITE_SERVER_URL;
+      const localPeer = new Peer(`${socketRoomId}-${username}`, {
+        host: "/",
+        // secure: true,
+        port: 3002,
+      });
+      localPeer.on("open", async (id) => {
+        // send socket event to server, to let other participants know to establish connection with the peerjs server
+        socket.emit("create-peer-conn");
+        await videoRef.current.play();
+        const localStream = await videoRef.current.captureStream();
+        setStream(localStream);
+      });
+
+      localPeer.on("error", (error) => {
+        console.error(error);
+      });
+
+      setPeer(localPeer);
+
+      return () => {
+        if (localPeer) {
+          socket.emit("dest-peer");
+          localPeer.destroy();
+          setPeer(null);
+        }
+      };
+    } catch (error) {
+      console.error(error);
+    }
+  }, [videoUrl]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleCall = ({ callee }) => {
+      setTimeout(() => {
+        try {
+          const call = peer.call(`${socketRoomId}-${callee}`, stream);
+          if (!call) {
+            socket.emit("dest-peer", { peer: callee }, ({ status }) => {
+              if (status === "success") {
+                socket.emit("create-peer-conn");
+              }
+            });
+            return;
+          }
+          call.on("error", (error) => {
+            console.error(error);
+          });
+        } catch (error) {
+          console.error(error);
+        }
+      }, 10);
+    };
+
+    const destPeer = (data, cb) => {
+      if (peer) {
+        peer.destroy();
+        setPeer(null);
+        if (!videoUrl.startsWith("https://www.youtube-nocookie.com"))
+          dispatch(setVideoUrlValidity(false));
+        setRemoteStream(null);
+        if (cb) {
+          cb({ status: "success" });
+        }
+      }
+    };
+    const handleUserJoin = ({ joiner }) => {
+      if (!isAdmin) return;
+      if (videoUrl.startsWith("blob:") && peer) {
+        socket.emit("create-peer-conn", { joiner });
+      }
+    };
+
+    socket.on("create-call", handleCall);
+    socket.on("dest-peer-conn", destPeer);
+    socket.on("join-msg", handleUserJoin);
+    return () => {
+      socket.off("create-call", handleCall);
+      socket.off("dest-peer-conn", destPeer);
+      socket.off("join-msg", handleUserJoin);
+    };
+  }, [stream, peer, socket, videoUrl, isAdmin]);
+
+  useEffect(() => {
+    if (remoteStream && videoUrlValidity && videoRef.current) {
+      (async () => {
+        await videoRef.current.load();
+        videoRef.current.srcObject = remoteStream;
+        await videoRef.current.play();
+      })();
+    }
+  }, [remoteStream, videoUrlValidity, videoRef]);
+
+  useEffect(() => {
+    return () => {
+      if (peer) {
+        peer.destroy();
+        setPeer(null);
+      }
+    };
+  }, [peer]);
+
+  // This function connects to the peer server and sends the confirmation to the server that it has connected successfully to the peerjs server, so it can receive stream
+  const connectToPeerServer = () => {
+    try {
+      if (peer) {
+        socket.emit("conn-succ");
+      }
+      const localPeer = new Peer(`${socketRoomId}-${username}`, {
+        host: "/",
+        // secure: true,
+        port: 3002,
+      });
+      localPeer.on("open", (id) => {
+        socket.emit("conn-succ");
+      });
+      localPeer.on("call", (call) => {
+        call.answer(undefined);
+        call.on("stream", (stream) => {
+          dispatch(setVideoUrlValidity(true));
+          setRemoteStream(stream);
+        });
+        call.on("error", (error) => {
+          console.error(error);
+        });
+      });
+      localPeer.on("error", (error) => {
+        console.error(error);
+      });
+      setPeer(localPeer);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handlePauseEvent = (data) => {
     setExecuteHandlePauseVideo(false);
     setIsPlaying(false);
   };
-  const handlePlayEvent = ({ curTimestamp }) => {
+  const handlePlayEvent = ({ curTimestamp, t }) => {
     setIsTimestamp(true);
-    videoRef.current.seekTo(curTimestamp, "seconds");
+    const skipToTime = curTimestamp + (Date.now() - t) / 1000;
+    videoRef.current.seekTo(skipToTime, "seconds");
     setIsPlaying(true);
   };
 
-  const handleTimestamp = ({ timestamp }) => {
+  const handleTimestamp = ({ timestamp, t }) => {
+    if (!videoRef.current) return;
     setIsTimestamp(true);
-    videoRef.current.seekTo(timestamp, "seconds");
+    let skipToTime = timestamp;
+    if (t) {
+      skipToTime = timestamp + (Date.now() - t) / 1000;
+    }
+    videoRef.current.seekTo(skipToTime, "seconds");
     setIsPlaying(true);
   };
 
   const handlePlaybackEvent = ({ speed }) => {
-    setPlaybackSpeed(speed);
+    setPlaybackSpeed({ speed: speed });
   };
 
   const emitTimestamp = ({ requester }) => {
     if (!socket) return;
     const timestamp = Math.trunc(videoRef.current.getCurrentTime());
-    socket.on("received-timestamp", () => {
-      setIsTimestamp(true);
-      videoRef.current.seekTo(timestamp, "seconds");
-      setIsPlaying(true);
-    });
+    // socket.on("received-timestamp", () => {
+    //   setIsTimestamp(true);
+    //   videoRef.current.seekTo(timestamp, "seconds");
+    //   setIsPlaying(true);
+    // });
     socket.emit("send-timestamp", {
       timestamp,
       socketRoom: socketRoomId,
       username: requester,
       admin: username,
       mainRoomId: roomId,
+      t: Date.now(),
     });
   };
 
@@ -104,6 +285,7 @@ const VideoPlayer = ({ socket }) => {
         curTimestamp,
         username,
         mainRoomId: roomId,
+        t: Date.now(),
       });
     } else {
       socket.emit("req-timestamp", {
@@ -132,6 +314,12 @@ const VideoPlayer = ({ socket }) => {
 
   const handlePlaybackVideo = (speed) => {
     if (!socket) return;
+    if (!isAdmin) {
+      // setPlaybackSpeed((prev) => {
+      //   return { speed: prev.speed };
+      // });
+      setPlaybackSpeed({ speed: 1 });
+    }
     if (isAdmin) {
       socket.emit("send-playback-rate", {
         speed,
@@ -139,25 +327,52 @@ const VideoPlayer = ({ socket }) => {
         username,
         mainRoomId: roomId,
       });
+      setPlaybackSpeed({ speed: speed });
     }
   };
 
   const handleError = (error) => {
-    console.log("##### Error in react-player #####");
+    console.error(error);
     if (error === 150) {
       console.log("No such video exists");
     }
   };
-  return (
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  };
+  return videoUrlValidity ? (
     <>
-      {isAdmin ? (
+      {videoUrl.startsWith("blob:") || remoteStream ? (
+        <div className="flex items-center w-full h-full">
+          <div className="video-wrapper w-full h-auto max-h-[480px] relative p-1">
+            <video
+              src={videoUrl}
+              controls={isAdmin}
+              className="w-full h-full"
+              ref={videoRef}
+            ></video>
+            {!isAdmin && (
+              <button
+                onClick={toggleMute}
+                className="absolute bottom-1 right-2"
+              >
+                {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
         <ReactPlayer
           ref={videoRef}
           playing={isPlaying}
           className="admin-player"
           url={videoUrl}
           style={{ width: "100%", height: "100%" }}
-          playbackRate={playbackSpeed}
+          playbackRate={playbackSpeed.speed}
           onError={handleError}
           onPlay={handlePlayVideo}
           onPause={handlePauseVideo}
@@ -167,30 +382,7 @@ const VideoPlayer = ({ socket }) => {
             youtube: {
               playerVars: {
                 start: startTime,
-                disablekb: 0,
-                autoplay: 1,
-              },
-            },
-          }}
-        />
-      ) : (
-        <ReactPlayer
-          ref={videoRef}
-          playing={isPlaying}
-          url={videoUrl}
-          className="normal-player"
-          style={{ width: "100%", height: "100%" }}
-          playbackRate={playbackSpeed}
-          onError={handleError}
-          onPlay={handlePlayVideo}
-          onPause={handlePauseVideo}
-          onPlaybackRateChange={handlePlaybackVideo}
-          controls={false}
-          config={{
-            youtube: {
-              playerVars: {
-                start: startTime,
-                disablekb: 1,
+                disablekb: isAdmin ? 0 : 1,
                 autoplay: 1,
               },
             },
@@ -198,6 +390,8 @@ const VideoPlayer = ({ socket }) => {
         />
       )}
     </>
+  ) : (
+    <></>
   );
 };
 

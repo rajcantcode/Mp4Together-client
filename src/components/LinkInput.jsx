@@ -7,7 +7,7 @@ import Tooltip from "@mui/material/Tooltip";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Snackbar from "@mui/joy/Snackbar";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-
+import DriveFolderUploadIcon from "@mui/icons-material/DriveFolderUpload";
 import { useSelector, useDispatch } from "react-redux";
 import {
   setVideoId,
@@ -16,13 +16,21 @@ import {
   setVideoUrl,
 } from "../store/videoUrlSlice";
 import axios, { AxiosError } from "axios";
-import { resetVideoSlice } from "../../services/helpers";
+import {
+  openFileSelector,
+  resetVideoSlice,
+  startFileShare,
+} from "../../services/helpers";
 import { useParams } from "react-router-dom";
 import { useCallback } from "react";
 import debounce from "lodash.debounce";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import VideoDetail from "./VideoDetail.jsx";
 import { useOnClickOutside } from "../../services/use-on-click-outside.js";
+import LoadingButton from "@mui/lab/LoadingButton";
+import BlockIcon from "@mui/icons-material/Block";
+import "../stylesheets/spinner.css";
+import { Peer } from "peerjs";
 
 export default function LinkInput({ socket }) {
   const [inpVideoUrl, setInpVideoUrl] = useState("");
@@ -30,10 +38,13 @@ export default function LinkInput({ socket }) {
 
   const { roomId } = useParams();
   const { socketRoomId } = useSelector((state) => state.roomInfo);
+  const { videoUrl } = useSelector((state) => state.videoUrl);
   const dispatch = useDispatch();
   const [serverErrorMessage, setServerErrorMessage] = useState("");
   const [videoDetails, setVideoDetails] = useState(null);
+  const [videoDetailsLoading, setVideoDetailsLoading] = useState(false);
   const formRef = useRef(null);
+  const modalRef = useRef(null);
 
   useOnClickOutside(formRef, () => {
     setVideoDetails(null);
@@ -48,10 +59,11 @@ export default function LinkInput({ socket }) {
 
   useEffect(() => {
     if (!socket) return;
-    const handleNewVideoUrl = ({ videoUrl, videoId, startTime }) => {
+    const handleNewVideoUrl = ({ videoUrl, videoId, startTime, t }) => {
       dispatch(setVideoUrl(videoUrl));
       dispatch(setVideoId(videoId));
-      dispatch(setVideoStartTime(startTime));
+      const skipToTime = startTime + (Date.now() - t) / 1000;
+      dispatch(setVideoStartTime(skipToTime));
       dispatch(setVideoUrlValidity(true));
     };
     socket.on("transmit-new-video-url", handleNewVideoUrl);
@@ -65,6 +77,7 @@ export default function LinkInput({ socket }) {
   const handleSnackbarClose = () => {
     setServerErrorMessage("");
   };
+
   const validateVideoUrl = async (url) => {
     try {
       const urlRegex =
@@ -116,6 +129,7 @@ export default function LinkInput({ socket }) {
           startTime,
           username,
           mainRoomId: roomId,
+          t: Date.now(),
         });
       }
       dispatch(setVideoUrl(noCookieUrl));
@@ -152,6 +166,7 @@ export default function LinkInput({ socket }) {
         setVideoDetails(null);
         return;
       }
+      setVideoDetailsLoading(true);
       const response = await axios.get(`${baseUrl}/room/youtube?q=${query}`, {
         withCredentials: true,
         validateStatus: function (status) {
@@ -170,7 +185,14 @@ export default function LinkInput({ socket }) {
     } catch (error) {
       console.error(error);
       setServerErrorMessage("Unable to fetch video details");
+    } finally {
+      setVideoDetailsLoading(false);
     }
+  };
+
+  const handleStopVideoShare = async () => {
+    dispatch(setVideoUrl(""));
+    dispatch(setVideoUrlValidity(false));
   };
 
   return (
@@ -225,7 +247,18 @@ export default function LinkInput({ socket }) {
               }}
             />
           </Tooltip>
-          {videoDetails ? (
+          {videoDetailsLoading ? (
+            <Box
+              className="loader-container h-[50px] w-full absolute flex content-center items-center"
+              sx={{
+                backgroundColor: "rgba(255, 255, 255, 0.3)",
+                backdropFilter: "blur(10px)",
+                borderRadius: "6px",
+              }}
+            >
+              <div className="search-loader"></div>
+            </Box>
+          ) : videoDetails ? (
             videoDetails.length !== 0 ? (
               <Box
                 className="videoDetails"
@@ -296,7 +329,106 @@ export default function LinkInput({ socket }) {
         >
           <ArrowForwardIcon />
         </Button>
+        {videoUrl.startsWith("blob") ? (
+          <Tooltip title="Stop video-share">
+            <span>
+              <Button
+                className="relative"
+                variant="contained"
+                disabled={!isAdmin}
+                sx={{
+                  minWidth: "40px",
+                  height: "40px",
+                  margin: "20px 0",
+                  padding: 0,
+                }}
+                onClick={handleStopVideoShare}
+              >
+                <DriveFolderUploadIcon className="text-gray-300" />
+                <BlockIcon
+                  className="absolute text-red-500 top-[3px]"
+                  fontSize="large"
+                />
+              </Button>
+            </span>
+          </Tooltip>
+        ) : (
+          <Tooltip title="Start video-share">
+            <span>
+              <Button
+                variant="contained"
+                disabled={!isAdmin}
+                sx={{
+                  minWidth: "40px",
+                  height: "40px",
+                  margin: "20px 0",
+                  padding: 0,
+                }}
+                onClick={() => {
+                  modalRef.current.showModal();
+                }}
+              >
+                <DriveFolderUploadIcon />
+              </Button>
+            </span>
+          </Tooltip>
+        )}
       </Stack>
+      <dialog
+        ref={modalRef}
+        className="p-[10px] border-amber-300 border-solid border-[4px] rounded-md w-3/4 modal"
+        style={{
+          backgroundColor: "rgba(255, 255, 255, 0.4)",
+          backdropFilter: "blur(20px)",
+        }}
+      >
+        <p className="mb-[10px] text-[30px] text-center text-red-600">
+          Attention !!
+        </p>
+
+        <div className="flex instruction">
+          <p className="mr-[5px] text-red-600">♦</p>
+          <p className="mb-2">
+            You are about to stream a local video file from your device to all
+            other participants in the room.
+          </p>
+        </div>
+        <div className="flex instruction">
+          <p className="mr-[5px] text-red-600">♦</p>
+          <p className="mb-2 instruction">
+            Since this uses peer to peer streaming, it is advised to keep the
+            participants number to below 4, to ensure a smooth experience.
+          </p>
+        </div>
+        <div className="flex w-full md:w-1/2 mx-auto actions justify-evenly my-[10px]">
+          <LoadingButton
+            size="medium"
+            variant="contained"
+            onClick={async () => {
+              try {
+                modalRef.current.close();
+                const url = await startFileShare();
+                if (!url) return;
+                dispatch(setVideoUrl(url));
+                dispatch(setVideoUrlValidity(true));
+              } catch (error) {
+                console.error(error);
+              }
+            }}
+          >
+            Select a video
+          </LoadingButton>
+          <LoadingButton
+            size="medium"
+            variant="contained"
+            onClick={() => {
+              modalRef.current.close();
+            }}
+          >
+            cancel
+          </LoadingButton>
+        </div>
+      </dialog>
       <Snackbar
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         autoHideDuration={3000}
