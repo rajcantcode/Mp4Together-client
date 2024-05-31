@@ -7,7 +7,7 @@ import "../stylesheets/videoPlayer.css";
 // Base styles for media player and provider (~400B).
 import ReactPlayer from "react-player/youtube";
 import Peer from "peerjs";
-import { setVideoUrlValidity } from "../store/videoUrlSlice";
+import { setVideoUrl, setVideoUrlValidity } from "../store/videoUrlSlice";
 
 // Default behaviour -
 // Admin will cotrol the video, ie : if admin pauses the videos of other members also pauses and if admin skips forward ....
@@ -71,29 +71,29 @@ const VideoPlayer = ({ socket }) => {
   useEffect(() => {
     if (!isAdmin) return;
     try {
-      if (!videoUrl && peer) {
-        peer.destroy();
+      let localPeer;
+      if (!videoUrl && localPeer) {
+        localPeer.destroy();
         setPeer(null);
         // send socket event to server, to let other participants know to destroy their peer connection
         socket.emit("dest-peer");
         return;
       }
-      if (!videoUrl.startsWith("blob:") && peer) {
-        peer.destroy();
+      if (!videoUrl.startsWith("blob:") && localPeer) {
+        localPeer.destroy();
         setPeer(null);
         // send socket event to server, to let other participants know to destroy their peer connection
-        socket.emit("dest-peer");
         return;
       }
 
-      if (videoUrl.startsWith("blob:") && peer) {
+      if (videoUrl.startsWith("blob:") && localPeer) {
         socket.emit("create-peer-conn");
       }
 
-      if (!videoUrl.startsWith("blob:") || peer) return;
+      if (!videoUrl.startsWith("blob:") || localPeer) return;
 
       const serverUrl = import.meta.env.VITE_SERVER_URL;
-      const localPeer = new Peer(`${socketRoomId}-${username}`, {
+      localPeer = new Peer(`${socketRoomId}-${username}`, {
         host: "/",
         // secure: true,
         port: 3002,
@@ -151,8 +151,8 @@ const VideoPlayer = ({ socket }) => {
       if (peer) {
         peer.destroy();
         setPeer(null);
-        if (!videoUrl.startsWith("https://www.youtube-nocookie.com"))
-          dispatch(setVideoUrlValidity(false));
+        dispatch(setVideoUrlValidity(false));
+        dispatch(setVideoUrl(""));
         setRemoteStream(null);
         if (cb) {
           cb({ status: "success" });
@@ -256,6 +256,7 @@ const VideoPlayer = ({ socket }) => {
 
   const emitTimestamp = ({ requester }) => {
     if (!socket) return;
+    if (!videoRef.current) return;
     const timestamp = Math.trunc(videoRef.current.getCurrentTime());
     // socket.on("received-timestamp", () => {
     //   setIsTimestamp(true);
