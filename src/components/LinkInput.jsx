@@ -122,6 +122,7 @@ export default function LinkInput({ socket }) {
           throw new Error(resData.msg);
         }
         // send socket message that new video Url has been set
+        socket.emit("dest-peer");
         socket.emit("newVideoUrl", {
           videoUrl: noCookieUrl,
           socketRoomId,
