@@ -36,26 +36,32 @@
   border-radius: 5px;
   cursor: pointer;
   width: 200px; /* Set the same width for all buttons */
-  transition: background-color 0.3s, color 0.3s;
+  transition: filter 0.3s, color 0.6s;
+  font-weight: "400";
+  box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2),
+    0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
 }
 
 .register-btn {
-  background-color: #28a745;
+  background-color: #02c6a2;
   color: #fff;
 }
 
 .login-btn {
-  background-color: #007bff;
+  background-color: #77de6f;
   color: #fff;
 }
 
 .guest-btn {
-  background-color: #ffc107;
+  background-color: #f9f871;
   color: #333;
 }
 
 .btn:hover {
   filter: brightness(1.2);
+  color: black;
+  box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2),
+    0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
 }
 
 /* @media (max-width: 768px) {

@@ -1,3 +1,9 @@
 .cs-message--incoming .cs-message__sender-name {
   display: block;
 }
+.cs-message--incoming .cs-message__content-wrapper .cs-message__content {
+  background-color: #86f5e0;
+}
+.cs-message--outgoing .cs-message__content-wrapper .cs-message__content {
+  background-color: #00d9b1;
+}

@@ -1,0 +1,32 @@
+.auth-form .css-1jy569b-MuiFormLabel-root-MuiInputLabel-root.Mui-focused {
+  color: #d2d027 !important;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.auth-form
+  .css-md26zr-MuiInputBase-root-MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: #d2d027 !important;
+}
+
+input:auto-fill {
+  background-image: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.3)
+  );
+  border-radius: 5px;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  background-image: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.3)
+  );
+  border-radius: 5px;
+}
