@@ -14,5 +14,13 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function ({ addBase }) {
+      addBase({
+        "*": {
+          boxSizing: "border-box",
+        },
+      });
+    },
+  ],
 };
