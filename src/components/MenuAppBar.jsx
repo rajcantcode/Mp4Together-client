@@ -57,6 +57,7 @@ function MenuAppBar({ socket, sfuSocket }) {
     const kick = async ({ admin }) => {
       const exitSuccess = await exitRoom(false);
       if (exitSuccess) {
+        socket.emit("set-kick-status");
         dispatch(
           setKickSnackbarInfo({
             show: true,
@@ -220,7 +221,7 @@ function MenuAppBar({ socket, sfuSocket }) {
                   textDecoration: "none",
                 }}
               >
-                Mp4ToGether
+                Mp4Together
               </Typography>
             </Box>
 
@@ -244,7 +245,7 @@ function MenuAppBar({ socket, sfuSocket }) {
                 textDecoration: "none",
               }}
             >
-              Mp4ToGether
+              Mp4Together
             </Typography>
             {/* small screen UI design end */}
 
@@ -275,7 +276,7 @@ function MenuAppBar({ socket, sfuSocket }) {
                     minWidth: "30px",
                     marginRight: "1rem",
                   }}
-                  className="mr-2"
+                  className="exit-btn"
                 >
                   <Typography sx={{ display: { xs: "none", md: "inline" } }}>
                     Exit Room

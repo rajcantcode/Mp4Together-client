@@ -10,8 +10,9 @@ import { useDispatch, useSelector } from "react-redux";
 import LoadingButton from "@mui/lab/LoadingButton";
 import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
+import GitHubIcon from "@mui/icons-material/GitHub";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { verifyUsername } from "../../services/helpers";
 import { setUsername } from "../store/userSlice";
 
@@ -142,13 +143,14 @@ const Header = ({ renderProfile }) => {
     }
   };
   return (
-    <AppBar position="static">
+    <AppBar position="static" sx={{ height: "64px" }}>
       <Container
         maxWidth="xl"
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          height: "100%",
         }}
       >
         <Toolbar disableGutters>
@@ -162,17 +164,23 @@ const Header = ({ renderProfile }) => {
             component="a"
             href="/"
             sx={{
-              mr: 2,
+              mr: 1,
               display: "flex",
               fontFamily: "monospace",
               fontWeight: 700,
-              letterSpacing: { xs: ".2rem", md: ".3rem" },
+              letterSpacing: { xs: ".1rem", md: ".2rem" },
               color: "inherit",
               textDecoration: "none",
             }}
           >
-            Mp4ToGether
+            Mp4Together
           </Typography>
+          <Link
+            to="https://github.com/rajcantcode/Mp4Together-client"
+            target="_blank"
+          >
+            <GitHubIcon fontSize="large" />
+          </Link>
         </Toolbar>
         {renderProfile && (
           <Box>
@@ -186,7 +194,9 @@ const Header = ({ renderProfile }) => {
               </IconButton>
             </Tooltip>
             <Menu
-              sx={{ mt: "45px" }}
+              sx={{
+                mt: "45px",
+              }}
               id="menu-appbar"
               anchorEl={anchorElUser}
               anchorOrigin={{

@@ -6,10 +6,36 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mp4Together</title>
+  <style>
+    *,
+    ::before,
+    ::after {
+      --tw-ring-color: #8dee86 !important;
+    }
+
+    .MuiMenu-paper {
+      background-color: transparent !important;
+      background: transparent;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)) !important;
+    }
+
+    .MuiMenu-list input {
+      background: transparent;
+    }
+
+    .exit-btn span {
+      @media (min-width: 768px) {
+        margin-right: 8px;
+      }
+
+      margin-right: 0;
+      margin-left: 0;
+    }
+  </style>
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root" style="width: 100%; min-height: 100vh; background-color: rgb(131,114,255);"></div>
   <script type="module" src="/src/main.jsx"></script>
   <script>
   </script>

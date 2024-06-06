@@ -31,7 +31,12 @@ const Interactive = ({ socket, sfuSocket }) => {
   return (
     <ResizablePanelGroup
       direction={innerWidth <= 768 ? "vertical" : "horizontal"}
-      className="w-full h-full"
+      className="w-full"
+      style={{
+        minHeight:
+          innerWidth <= 768 ? "calc(100vh - 96px)" : "calc(100vh - 164px)",
+        maxHeight: "100vh",
+      }}
     >
       <ResizablePanel
         defaultSize={innerWidth <= 768 ? 40 : 70}

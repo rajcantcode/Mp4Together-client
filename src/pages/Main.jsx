@@ -172,7 +172,17 @@ const Main = () => {
   return (
     <>
       {isValidUser ? (
-        <Container maxWidth="xl" sx={{ padding: "0 4px", height: "100vh" }}>
+        <Container
+          maxWidth="xl"
+          sx={{
+            padding: "0 4px",
+            minHeight: "100vh",
+            maxHeight: "auto",
+            backgroundImage:
+              "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%)",
+            backdropFilter: "blur(10px)",
+          }}
+        >
           <MenuAppBar socket={socket} sfuSocket={sfuSocket} />
           <LinkInput socket={socket} />
           <Interactive socket={socket} sfuSocket={sfuSocket} />
@@ -191,13 +201,13 @@ const Main = () => {
       ) : (
         <>
           <Header />
-          <div className="flex items-center justify-center h-screen">
-            <p ref={errorRef} className="text-2xl">
+          <div className="flex items-center justify-center h-[calc(100vh-64px)] text-center">
+            <p ref={errorRef} className="text-xl text-white md:text-2xl">
               Authenticating user, please wait...
             </p>
             {errorRef.current?.textContent ===
               "Authenticating user, please wait..." && (
-              <div className="lds-roller-2">
+              <div className="text-white lds-roller-2">
                 <div></div>
                 <div></div>
                 <div></div>

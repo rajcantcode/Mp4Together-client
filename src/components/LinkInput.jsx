@@ -206,7 +206,7 @@ export default function LinkInput({ socket }) {
         sx={{
           width: "100%",
           height: "100px",
-          backgroundColor: "orange",
+          backgroundColor: "#F9F871",
           position: "relative",
         }}
         ref={formRef}
@@ -241,7 +241,10 @@ export default function LinkInput({ socket }) {
               sx={{
                 width: "100%",
                 cursor: "pointer",
+                borderColor: "#8DEE86",
+                color: "#8DEE86",
               }}
+              // inputProps={{ borderColor: "#8DEE86" }}
               onChange={(e) => {
                 setInpVideoUrl(e.target.value);
                 debounceRequest(e.target.value);
@@ -326,6 +329,10 @@ export default function LinkInput({ socket }) {
             height: "40px",
             margin: "20px 0",
             padding: 0,
+            backgroundColor: "#00D9B1",
+            "&:hover": {
+              backgroundColor: "#00D9B1",
+            },
           }}
         >
           <ArrowForwardIcon />
@@ -342,6 +349,10 @@ export default function LinkInput({ socket }) {
                   height: "40px",
                   margin: "20px 0",
                   padding: 0,
+                  backgroundColor: "#00D9B1",
+                  "&:hover": {
+                    backgroundColor: "#00D9B1",
+                  },
                 }}
                 onClick={handleStopVideoShare}
               >
@@ -364,6 +375,10 @@ export default function LinkInput({ socket }) {
                   height: "40px",
                   margin: "20px 0",
                   padding: 0,
+                  backgroundColor: "#00D9B1",
+                  "&:hover": {
+                    backgroundColor: "#00D9B1",
+                  },
                 }}
                 onClick={() => {
                   modalRef.current.showModal();
@@ -399,6 +414,13 @@ export default function LinkInput({ socket }) {
           <p className="mb-2 instruction">
             Since this uses peer to peer streaming, it is advised to keep the
             participants number to below 4, to ensure a smooth experience.
+          </p>
+        </div>
+        <div className="flex instruction">
+          <p className="mr-[5px] text-red-600">♦</p>
+          <p className="mb-2 instruction">
+            If some participant fails to receive the stream, please ask them to
+            rejoin
           </p>
         </div>
         <div className="flex w-full md:w-1/2 mx-auto actions justify-evenly my-[10px]">

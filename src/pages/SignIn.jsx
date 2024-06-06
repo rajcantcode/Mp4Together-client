@@ -1,6 +1,6 @@
 import * as React from "react";
 import axios from "axios";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setUsername, setEmail } from "../store/userSlice";
@@ -20,7 +20,6 @@ import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import Snackbar from "@mui/joy/Snackbar";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import { useState } from "react";
 import LoadingButton from "@mui/lab/LoadingButton";
 import {
   InputOTP,
@@ -28,6 +27,7 @@ import {
   InputOTPSeparator,
   InputOTPSlot,
 } from "../components/ui/InputOtp";
+import "../stylesheets/auth.css";
 function Copyright(props) {
   return (
     <Typography
@@ -59,9 +59,22 @@ export default function SignIn() {
   const [localEmail, setLocalEmail] = useState("");
   const [otp, setOtp] = useState("");
 
+  useEffect(() => {
+    if (otp.length === 6 && !loading) {
+      verifyOtp();
+    }
+  }, [otp]);
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
   const handleSnackbarClose = () => {
     setIsServerError(false);
+  };
+
+  const inpOtpStyle = {
+    backgroundColor: "transparent",
+    backgroundImage:
+      "linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2))",
+    borderRadius: "5px",
+    // borderColor: "red",
   };
   const handleSubmit = async (event) => {
     setLoading(true);
@@ -204,10 +217,15 @@ export default function SignIn() {
               alignItems: "center",
             }}
           >
-            <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
+            <Avatar sx={{ m: 1, bgcolor: "#04e2bf" }}>
               <LockOutlinedIcon />
             </Avatar>
-            <Typography component="h1" variant="h5" align="center">
+            <Typography
+              component="h1"
+              variant="h5"
+              align="center"
+              sx={{ color: "white" }}
+            >
               {localEmail === ""
                 ? "Sign in"
                 : `Please enter the verification code sent to ${localEmail}`}
@@ -218,6 +236,7 @@ export default function SignIn() {
                 onSubmit={handleSubmit}
                 noValidate
                 sx={{ mt: 1 }}
+                className="auth-form"
               >
                 <TextField
                   margin="normal"
@@ -230,6 +249,11 @@ export default function SignIn() {
                   autoComplete="email"
                   autoFocus
                   disabled={loading}
+                  sx={{
+                    backgroundImage:
+                      "linear-gradient(to right, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3))",
+                    borderRadius: "5px",
+                  }}
                 />
                 <TextField
                   margin="normal"
@@ -241,12 +265,21 @@ export default function SignIn() {
                   id="password"
                   autoComplete="current-password"
                   disabled={loading}
+                  sx={{
+                    backgroundImage:
+                      "linear-gradient(to right, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3))",
+                    borderRadius: "5px",
+                  }}
                 />
                 <Typography
                   variant="h6"
-                  color="red"
                   display="none"
                   ref={errorRef}
+                  sx={{
+                    color: "#ef4444",
+                    textShadow: "1px 1px 2px #141414",
+                    letterSpacing: "2px",
+                  }}
                 >
                   Invalid email or password
                 </Typography>
@@ -254,7 +287,18 @@ export default function SignIn() {
                   type="submit"
                   fullWidth
                   variant="contained"
-                  sx={{ mt: 3, mb: 2 }}
+                  sx={{
+                    mt: 3,
+                    mb: 2,
+                    fontSize: "1.2rem",
+                    backgroundColor: "#02c6a2",
+                    transition: "filter 0.3s, color 0.6s",
+                    "&:hover": {
+                      backgroundColor: "#02c6a2",
+                      filter: "brightness(1.2)",
+                      color: "black",
+                    },
+                  }}
                   loading={loading}
                 >
                   Sign In
@@ -262,55 +306,46 @@ export default function SignIn() {
                 <Grid container>
                   <Grid item xs></Grid>
                   <Grid item>
-                    <Link href="/register" variant="body2">
+                    <Link
+                      href="/register"
+                      variant="body2"
+                      sx={{ color: "white", textDecoration: "underline" }}
+                    >
                       {"Don't have an account? Sign Up"}
                     </Link>
                   </Grid>
                 </Grid>
               </Box>
             ) : (
-              <Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mt: 3,
-                  }}
-                >
+              <Box className="flex flex-col items-center w-full ">
+                <Box className="mt-8">
                   <InputOTP
                     maxLength={6}
                     value={otp}
                     onChange={(value) => setOtp(value)}
                   >
                     <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={0} style={inpOtpStyle} />
+                      <InputOTPSlot index={1} style={inpOtpStyle} />
+                      <InputOTPSlot index={2} style={inpOtpStyle} />
                     </InputOTPGroup>
                     <InputOTPSeparator />
                     <InputOTPGroup>
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
+                      <InputOTPSlot index={3} style={inpOtpStyle} />
+                      <InputOTPSlot index={4} style={inpOtpStyle} />
+                      <InputOTPSlot index={5} style={inpOtpStyle} />
                     </InputOTPGroup>
                   </InputOTP>
-                  <LoadingButton
-                    sx={{ width: "fit-content" }}
-                    disableRipple={true}
-                    variant="text"
-                    onClick={verifyOtp}
-                    loading={loading}
-                  >
-                    <SendIcon sx={{ fontSize: "1.9rem" }} />
-                  </LoadingButton>
                 </Box>
                 <p
-                  className={`mt-5 mr-[35px] text-center ${
+                  className={`mt-5 text-center ${
                     errorRef.current.textContent.includes("New otp")
                       ? "text-green-500"
                       : "text-red-500"
-                  }`}
+                  } font-bold tracking-[3px]`}
+                  style={{
+                    textShadow: "1px 1px 2px #141414",
+                  }}
                   ref={errorRef}
                 ></p>
                 <LoadingButton
@@ -318,7 +353,14 @@ export default function SignIn() {
                     display: "block",
                     width: "fit-content",
                     marginTop: "1.25rem",
-                    marginLeft: "80px",
+                    color: "white",
+                    borderColor: "#8dee86",
+                    "&:hover": {
+                      textDecoration: "none",
+                      backgroundImage:
+                        "linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2))",
+                      border: "1px solid #8dee86",
+                    },
                   }}
                   disableRipple={true}
                   variant="outlined"
@@ -330,7 +372,7 @@ export default function SignIn() {
               </Box>
             )}
           </Box>
-          <Copyright sx={{ mt: 8, mb: 4 }} />
+          <Copyright sx={{ mt: 8, mb: 4, color: "white" }} />
         </Container>
       </ThemeProvider>
       <Snackbar

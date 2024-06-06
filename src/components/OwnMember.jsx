@@ -1,4 +1,10 @@
-import { Box, ListItem, ListItemIcon, ListItemText } from "@mui/material";
+import {
+  Box,
+  Divider,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,7 +12,7 @@ import MicIcon from "@mui/icons-material/Mic";
 import MicOffIcon from "@mui/icons-material/MicOff";
 import { setRoomMembersMicState } from "../store/roomSlice";
 
-const OwnMember = ({ name, device, socket, sfuSocket }) => {
+const OwnMember = ({ name, device, socket, sfuSocket, displayHr }) => {
   const { membersMicState, socketRoomId, roomId } = useSelector(
     (state) => state.roomInfo
   );
@@ -198,26 +204,37 @@ const OwnMember = ({ name, device, socket, sfuSocket }) => {
   };
 
   return (
-    <ListItem className="flex justify-between w-full align-middle">
-      <ListItemText
-        //   Adding 👑 before admin's name
-        primary={isAdmin ? "👑ㅤ" + name : "ㅤ ㅤ" + name}
-      />
-      <Box className="icon-container">
-        <Tooltip title={micOn ? "mute" : "unmute"} placement="top">
-          <ListItemIcon
-            sx={{
-              minWidth: "25px",
-              margin: "0 10px",
-              cursor: "pointer",
-            }}
-            onClick={handleMic}
-          >
-            {micOn ? <MicIcon /> : <MicOffIcon />}
-          </ListItemIcon>
-        </Tooltip>
-      </Box>
-    </ListItem>
+    <>
+      <ListItem className="flex justify-between w-full align-middle">
+        <ListItemText
+          //   Adding 👑 before admin's name
+          primary={isAdmin ? "👑ㅤ" + name : "🥷🏻ㅤ" + name}
+        />
+        <Box className="icon-container">
+          <Tooltip title={micOn ? "mute" : "unmute"} placement="top">
+            <ListItemIcon
+              sx={{
+                minWidth: "25px",
+                margin: "0 10px",
+                cursor: "pointer",
+              }}
+              onClick={handleMic}
+            >
+              {micOn ? <MicIcon /> : <MicOffIcon />}
+            </ListItemIcon>
+          </Tooltip>
+        </Box>
+      </ListItem>
+      {displayHr && (
+        <Divider
+          sx={{
+            border: "none",
+            height: "2px",
+            backgroundColor: "#F9F871",
+          }}
+        />
+      )}
+    </>
   );
 };
 

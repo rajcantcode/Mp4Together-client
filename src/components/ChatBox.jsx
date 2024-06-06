@@ -134,13 +134,16 @@ const ChatBox = ({ socket, innerWidth }) => {
         height: innerWidth <= 768 ? "calc(100% - 55px)" : "100%",
         position: "relative",
         backgroundColor: "pink",
+        border: innerWidth < 768 ? "none" : "#8DEE86 2px solid",
       }}
     >
       <div style={{ position: "relative", height: "100%" }}>
-        <MainContainer>
-          <ChatContainer>
+        <MainContainer style={{ backgroundColor: "#8DEE86" }}>
+          <ChatContainer style={{ backgroundColor: "#8DEE86" }}>
             {innerWidth > 768 && (
-              <ConversationHeader>
+              <ConversationHeader
+                style={{ borderColor: "#F9F871", borderBottomWidth: "4px" }}
+              >
                 <ConversationHeader.Content userName="Chat" />
                 <ConversationHeader.Actions></ConversationHeader.Actions>
               </ConversationHeader>

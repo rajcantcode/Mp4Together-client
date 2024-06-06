@@ -91,11 +91,25 @@ const MemberList = ({ socket, sfuSocket, innerWidth }) => {
           overflowX: "hidden",
           overflowY: "auto",
           position: "relative",
+          backgroundColor: "white",
+          scrollbarWidth: "thin",
+          "&::-webkit-scrollbar-track": {
+            background: "white",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "red",
+          },
+          border: "#8DEE86 2px solid",
+          padding: "0",
         }}
         subheader={<ListHeader innerWidth={innerWidth} />}
-        className="fixed right-0 z-20 w-[50vw] bg-white-500 border"
+        className="fixed right-0 z-20 w-[50vw]"
       >
-        <Divider />
+        {innerWidth > 768 && (
+          <Divider
+            sx={{ border: "none", height: "4px", backgroundColor: "#F9F871" }}
+          />
+        )}
         {device?.loaded ? (
           sortedMembers.map((member, index) => {
             if (member === username) {
@@ -106,6 +120,7 @@ const MemberList = ({ socket, sfuSocket, innerWidth }) => {
                   socket={socket}
                   sfuSocket={sfuSocket}
                   key={index}
+                  displayHr={index !== sortedMembers.length - 1}
                 />
               );
             } else {
@@ -116,6 +131,7 @@ const MemberList = ({ socket, sfuSocket, innerWidth }) => {
                   socket={socket}
                   sfuSocket={sfuSocket}
                   key={index}
+                  displayHr={index !== sortedMembers.length - 1}
                 />
               );
             }

@@ -31,7 +31,7 @@ import Input from "@mui/joy/Input";
 import SendIcon from "@mui/icons-material/Send";
 import axios from "axios";
 import { setVideoUrl } from "../store/videoUrlSlice";
-// import "./Room.css";
+import "./Room.css";
 
 const StyledInput = styled("input")({
   border: "none", // remove the native input border
@@ -90,7 +90,9 @@ const InnerInput = React.forwardRef(function InnerInput(props, ref) {
   return (
     <React.Fragment>
       <StyledInput {...props} ref={ref} id={id} />
-      <StyledLabel htmlFor={id}>Enter room Link or Id</StyledLabel>
+      <StyledLabel htmlFor={id} sx={{ color: "#2f353b" }}>
+        Enter room Link or Id
+      </StyledLabel>
     </React.Fragment>
   );
 });
@@ -98,6 +100,18 @@ const InnerInput = React.forwardRef(function InnerInput(props, ref) {
 const Room = () => {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true); // State to track modal loading status
+
+  const [innerWidth, setInnerWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setInnerWidth(window.innerWidth);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -370,10 +384,24 @@ const Room = () => {
     <>
       <div className="room-container">
         <Header renderProfile={!isLoading && true} />
+        <div
+          className="bg"
+          style={{
+            height: "calc(100vh - 64px)",
+            backgroundImage:
+              innerWidth > 768
+                ? "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(/bg.webp)"
+                : "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(bg-mobile.webp)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        ></div>
         {isLoading ? ( // Render the modal if isLoading is true
           <div className="absolute translate-y-[-50%] translate-x-[-50%] modal top-1/2 left-1/2 flex justify-between items-center">
-            <p className="text-2xl">Authenticating user, please wait...</p>
-            <div className="lds-roller-2">
+            <p className="text-xl text-white md:text-2xl">
+              Authenticating user, please wait...
+            </p>
+            <div className="text-white lds-roller-2">
               <div></div>
               <div></div>
               <div></div>
@@ -413,6 +441,11 @@ const Room = () => {
                   display: "block",
                   minHeight: "56px",
                   width: "100%",
+                  backgroundColor: "#00D9B1",
+                  fontSize: "1.2rem",
+                  "&:hover": {
+                    backgroundColor: "#00a663",
+                  },
                 }}
               >
                 <span>Create New Room</span>
@@ -429,6 +462,11 @@ const Room = () => {
                   display: "block",
                   minHeight: "56px",
                   width: "100%",
+                  backgroundColor: "#8DEE86",
+                  fontSize: "1.2rem",
+                  "&:hover": {
+                    backgroundColor: "#6ab765",
+                  },
                 }}
               >
                 <span>Join a room</span>
@@ -448,8 +486,12 @@ const Room = () => {
                       slots={{ input: InnerInput }}
                       slotProps={{
                         input: {
-                          placeholder: `https://websiteUrl/unique-room-id`,
+                          placeholder: `https://mp4together.live/unique-room-id`,
                           type: "text",
+                          background: "transparent",
+                          "&::placeholder": {
+                            color: "#2f353b !important",
+                          },
                         },
                       }}
                       sx={{
@@ -457,6 +499,8 @@ const Room = () => {
                         "--Input-radius": "6px",
                         width: "90%",
                         margin: "10px",
+                        backgroundColor: "#dcdfe37a",
+                        color: "#2f353b !important",
                       }}
                       value={roomLink}
                       onChange={handleRoomLinkChange}
@@ -470,7 +514,7 @@ const Room = () => {
                       loading={loadingStatus.sendBtn}
                       disabled={disabledStatus.sendBtn}
                     >
-                      <SendIcon sx={{ fontSize: "1.9rem" }} />
+                      <SendIcon sx={{ fontSize: "1.9rem", color: "#50ff00" }} />
                     </LoadingButton>
                   </Box>
                   <p style={{ color: "red" }}>{errorMsg}</p>

@@ -1,5 +1,4 @@
-import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
@@ -26,6 +25,7 @@ import {
   InputOTPSeparator,
   InputOTPSlot,
 } from "../components/ui/InputOtp";
+import "../stylesheets/auth.css";
 
 function Copyright(props) {
   return (
@@ -37,7 +37,7 @@ function Copyright(props) {
     >
       {"Copyright © "}
       <Link color="inherit" href="/">
-        Mp4ToGether
+        Mp4Together
       </Link>{" "}
       {new Date().getFullYear()}
       {"."}
@@ -65,6 +65,19 @@ export default function SignUp() {
   const [isServerError, setIsServerError] = useState(false);
   const handleSnackbarClose = () => {
     setIsServerError(false);
+  };
+
+  useEffect(() => {
+    if (otp.length === 6 && !loading) {
+      verifyOtp();
+    }
+  }, [otp]);
+  const inpOtpStyle = {
+    backgroundColor: "transparent",
+    backgroundImage:
+      "linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2))",
+    borderRadius: "5px",
+    // borderColor: "red",
   };
 
   function validateUserData(email, password, username) {
@@ -326,10 +339,15 @@ export default function SignUp() {
               alignItems: "center",
             }}
           >
-            <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
+            <Avatar sx={{ m: 1, bgcolor: "#04e2bf" }}>
               <LockOutlinedIcon />
             </Avatar>
-            <Typography component="h1" variant="h5" align="center">
+            <Typography
+              component="h1"
+              variant="h5"
+              align="center"
+              sx={{ color: "white" }}
+            >
               {email === ""
                 ? "Sign up"
                 : `Please enter the verification code sent to ${email}`}
@@ -340,6 +358,7 @@ export default function SignUp() {
                 noValidate
                 onSubmit={handleSubmit}
                 sx={{ mt: 3 }}
+                className="auth-form"
               >
                 <Grid container spacing={2}>
                   <Grid
@@ -349,7 +368,9 @@ export default function SignUp() {
                     sx={{
                       "::after": {
                         content: `'${signUpErrMsg.usernameErr}'`,
-                        color: "red",
+                        color: "#ef4444",
+                        textShadow: "1px 1px 2px #141414",
+                        letterSpacing: "2px",
                       },
                     }}
                   >
@@ -360,6 +381,11 @@ export default function SignUp() {
                       label="Username"
                       name="username"
                       disabled={loading}
+                      sx={{
+                        backgroundImage:
+                          "linear-gradient(to right, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3))",
+                        borderRadius: "5px",
+                      }}
                     />
                   </Grid>
                   <Grid
@@ -368,7 +394,9 @@ export default function SignUp() {
                     sx={{
                       "::after": {
                         content: `'${signUpErrMsg.emailErr}'`,
-                        color: "red",
+                        color: "#ef4444",
+                        textShadow: "1px 1px 2px #141414",
+                        letterSpacing: "2px",
                       },
                     }}
                   >
@@ -380,6 +408,11 @@ export default function SignUp() {
                       name="email"
                       autoComplete="email"
                       disabled={loading}
+                      sx={{
+                        backgroundImage:
+                          "linear-gradient(to right, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3))",
+                        borderRadius: "5px",
+                      }}
                     />
                   </Grid>
                   <Grid
@@ -388,7 +421,9 @@ export default function SignUp() {
                     sx={{
                       "::after": {
                         content: `'${signUpErrMsg.passwordErr}'`,
-                        color: "red",
+                        color: "#ef4444",
+                        textShadow: "1px 1px 2px #141414",
+                        letterSpacing: "2px",
                       },
                     }}
                   >
@@ -401,6 +436,11 @@ export default function SignUp() {
                       id="password"
                       autoComplete="new-password"
                       disabled={loading}
+                      sx={{
+                        backgroundImage:
+                          "linear-gradient(to right, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3))",
+                        borderRadius: "5px",
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12}></Grid>
@@ -409,62 +449,64 @@ export default function SignUp() {
                   type="submit"
                   fullWidth
                   variant="contained"
-                  sx={{ mt: 3, mb: 2 }}
+                  sx={{
+                    mt: 3,
+                    mb: 2,
+                    fontSize: "1.2rem",
+                    backgroundColor: "#02c6a2",
+                    transition: "filter 0.3s, color 0.6s",
+                    "&:hover": {
+                      backgroundColor: "#02c6a2",
+                      filter: "brightness(1.2)",
+                      color: "black",
+                      boxShadow: "",
+                    },
+                  }}
                   loading={loading}
                 >
                   Sign Up
                 </LoadingButton>
                 <Grid container justifyContent="flex-end">
                   <Grid item>
-                    <Link href="/login" variant="body2">
+                    <Link
+                      href="/login"
+                      variant="body2"
+                      sx={{ color: "white", textDecoration: "underline" }}
+                    >
                       Already have an account? Sign in
                     </Link>
                   </Grid>
                 </Grid>
               </Box>
             ) : (
-              <Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mt: 3,
-                  }}
-                >
+              <Box className="flex flex-col items-center w-full ">
+                <Box className="mt-8">
                   <InputOTP
                     maxLength={6}
                     value={otp}
                     onChange={(value) => setOtp(value)}
                   >
                     <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={0} style={inpOtpStyle} />
+                      <InputOTPSlot index={1} style={inpOtpStyle} />
+                      <InputOTPSlot index={2} style={inpOtpStyle} />
                     </InputOTPGroup>
                     <InputOTPSeparator />
                     <InputOTPGroup>
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
+                      <InputOTPSlot index={3} style={inpOtpStyle} />
+                      <InputOTPSlot index={4} style={inpOtpStyle} />
+                      <InputOTPSlot index={5} style={inpOtpStyle} />
                     </InputOTPGroup>
                   </InputOTP>
-                  <LoadingButton
-                    sx={{ width: "fit-content" }}
-                    disableRipple={true}
-                    variant="text"
-                    onClick={verifyOtp}
-                    loading={loading}
-                  >
-                    <SendIcon sx={{ fontSize: "1.9rem" }} />
-                  </LoadingButton>
                 </Box>
                 <p
-                  className="mt-5 mr-[35px] text-center"
+                  className="mt-5 text-center"
                   style={{
                     color: signUpErrMsg.otpErr.includes("New ")
-                      ? "green"
-                      : "red",
+                      ? "#22c55e"
+                      : "#ef4444",
+                    textShadow: "1px 1px 2px #141414",
+                    letterSpacing: "3px",
                   }}
                 >
                   {signUpErrMsg.otpErr}
@@ -474,7 +516,15 @@ export default function SignUp() {
                     display: "block",
                     width: "fit-content",
                     marginTop: "1.25rem",
-                    marginLeft: "80px",
+                    // marginLeft: "80px",
+                    color: "white",
+                    borderColor: "#8dee86",
+                    "&:hover": {
+                      textDecoration: "none",
+                      backgroundImage:
+                        "linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2))",
+                      border: "1px solid #8dee86",
+                    },
                   }}
                   disableRipple={true}
                   variant="outlined"
@@ -486,6 +536,7 @@ export default function SignUp() {
               </Box>
             )}
           </Box>
+          <Copyright sx={{ mt: 8, mb: 4, color: "white" }} />
         </Container>
       </ThemeProvider>
       <Snackbar
