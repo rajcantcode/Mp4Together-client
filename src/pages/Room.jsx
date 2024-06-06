@@ -30,7 +30,7 @@ import { styled } from "@mui/joy/styles";
 import Input from "@mui/joy/Input";
 import SendIcon from "@mui/icons-material/Send";
 import axios from "axios";
-import { setVideoUrl } from "../store/videoUrlSlice";
+import { setVideoPlaybackSpeed, setVideoUrl } from "../store/videoUrlSlice";
 import "./Room.css";
 
 const StyledInput = styled("input")({
@@ -319,6 +319,7 @@ const Room = () => {
             username,
             email,
             videoUrl,
+            playbackSpeed,
             membersMicState,
           } = resData;
 
@@ -343,6 +344,7 @@ const Room = () => {
 
           if (videoUrl) {
             dispatch(setVideoUrl(videoUrl));
+            dispatch(setVideoPlaybackSpeed(playbackSpeed));
           }
 
           setErrorMsg("");

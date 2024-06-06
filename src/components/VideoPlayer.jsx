@@ -7,16 +7,19 @@ import "../stylesheets/videoPlayer.css";
 // Base styles for media player and provider (~400B).
 import ReactPlayer from "react-player/youtube";
 import Peer from "peerjs";
-import { setVideoUrl, setVideoUrlValidity } from "../store/videoUrlSlice";
+import {
+  setVideoUrl,
+  setVideoUrlValidity,
+  setVideoPlaybackSpeed,
+} from "../store/videoUrlSlice";
 
 // Default behaviour -
 // Admin will cotrol the video, ie : if admin pauses the videos of other members also pauses and if admin skips forward ....
 // Other users can pause, play but that will not effect other members in the room.
 
 const VideoPlayer = ({ socket }) => {
-  const { videoId, videoUrl, startTime, videoUrlValidity } = useSelector(
-    (state) => state.videoUrl
-  );
+  const { videoId, videoUrl, startTime, videoUrlValidity, playbackSpeed } =
+    useSelector((state) => state.videoUrl);
   const { socketRoomId, admins, roomId } = useSelector(
     (state) => state.roomInfo
   );
@@ -26,7 +29,7 @@ const VideoPlayer = ({ socket }) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   // Video playback state
-  const [playbackSpeed, setPlaybackSpeed] = useState({ speed: 1 });
+  // const [playbackSpeed, setPlaybackSpeed] = useState({ speed: 1 });
 
   // The below two state variables solely exist to determine whether "handlePlayVideo" and "handlePauseVideo" function should execute or not.
   // Since I am using "isPlaying" to pause or play the video, and changing state of "isPlaying" leads to calling "handlePlayVideo" or "handlePauseVideo" depending upon value of "isPlaying", which causes infinite loop in those functions.
@@ -251,7 +254,7 @@ const VideoPlayer = ({ socket }) => {
   };
 
   const handlePlaybackEvent = ({ speed }) => {
-    setPlaybackSpeed({ speed: speed });
+    dispatch(setVideoPlaybackSpeed(speed));
   };
 
   const emitTimestamp = ({ requester }) => {
@@ -315,12 +318,12 @@ const VideoPlayer = ({ socket }) => {
 
   const handlePlaybackVideo = (speed) => {
     if (!socket) return;
-    if (!isAdmin) {
-      // setPlaybackSpeed((prev) => {
-      //   return { speed: prev.speed };
-      // });
-      setPlaybackSpeed({ speed: 1 });
-    }
+    // if (!isAdmin) {
+    //   // setPlaybackSpeed((prev) => {
+    //   //   return { speed: prev.speed };
+    //   // });
+    //   setPlaybackSpeed({ speed: 1 });
+    // }
     if (isAdmin) {
       socket.emit("send-playback-rate", {
         speed,
@@ -328,7 +331,7 @@ const VideoPlayer = ({ socket }) => {
         username,
         mainRoomId: roomId,
       });
-      setPlaybackSpeed({ speed: speed });
+      dispatch(setVideoPlaybackSpeed(speed));
     }
   };
 
@@ -366,7 +369,7 @@ const VideoPlayer = ({ socket }) => {
           className="admin-player"
           url={videoUrl}
           style={{ width: "100%", height: "100%" }}
-          playbackRate={playbackSpeed.speed}
+          playbackRate={playbackSpeed}
           onError={handleError}
           onPlay={handlePlayVideo}
           onPause={handlePauseVideo}

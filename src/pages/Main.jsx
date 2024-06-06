@@ -28,6 +28,7 @@ import { joinSocketRoom } from "../socket/socketUtils.js";
 import { authenticateUser, fetchUser } from "../../services/helpers.js";
 import {
   setVideoId,
+  setVideoPlaybackSpeed,
   setVideoStartTime,
   setVideoUrl,
   setVideoUrlValidity,
@@ -88,6 +89,7 @@ const Main = () => {
             username,
             email,
             videoUrl,
+            playbackSpeed,
             membersMicState,
             guest,
           } = res;
@@ -117,6 +119,7 @@ const Main = () => {
           if (videoUrl) {
             dispatch(setVideoUrl(videoUrl));
             dispatch(setVideoId(videoUrl ? videoUrl.split("/embed/")[1] : 0));
+            dispatch(setVideoPlaybackSpeed(playbackSpeed));
           }
 
           setIsValidUser(true);

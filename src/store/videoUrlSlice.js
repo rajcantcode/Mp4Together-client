@@ -7,6 +7,7 @@ export const videoUrlSlice = createSlice({
     videoUrl: "",
     videoId: "",
     startTime: 0,
+    playbackSpeed: 1,
     videoUrlValidity: false,
   },
   reducers: {
@@ -19,6 +20,9 @@ export const videoUrlSlice = createSlice({
     setVideoStartTime: (state, action) => {
       state.startTime = action.payload;
     },
+    setVideoPlaybackSpeed: (state, action) => {
+      state.playbackSpeed = action.payload;
+    },
     setVideoUrlValidity: (state, action) => {
       state.videoUrlValidity = action.payload;
     },
@@ -29,6 +33,7 @@ export const {
   setVideoUrl,
   setVideoId,
   setVideoStartTime,
+  setVideoPlaybackSpeed,
   setVideoUrlValidity,
 } = videoUrlSlice.actions;
 export default videoUrlSlice.reducer;
