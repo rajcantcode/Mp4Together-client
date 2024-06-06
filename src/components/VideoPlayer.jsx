@@ -345,25 +345,18 @@ const VideoPlayer = ({ socket }) => {
       setIsMuted(videoRef.current.muted);
     }
   };
+
   return videoUrlValidity ? (
     <>
       {videoUrl.startsWith("blob:") || remoteStream ? (
         <div className="flex items-center w-full h-full">
-          <div className="video-wrapper w-full h-auto max-h-[480px] relative p-1">
+          <div className="video-wrapper w-full h-[480px] max-h-[480px] relative p-1">
             <video
               src={videoUrl}
-              controls={isAdmin}
+              controls={true}
               className="w-full h-full"
               ref={videoRef}
             ></video>
-            {!isAdmin && (
-              <button
-                onClick={toggleMute}
-                className="absolute bottom-1 right-2"
-              >
-                {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
-              </button>
-            )}
           </div>
         </div>
       ) : (
