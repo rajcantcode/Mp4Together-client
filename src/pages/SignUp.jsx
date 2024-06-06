@@ -219,14 +219,18 @@ export default function SignUp() {
           });
         }
       } else if (response.status === 201) {
-        const { email } = response.data;
-        setEmail(email);
+        const { email, verified } = response.data;
         setSignUpErrMsg({
           emailErr: "",
           passwordErr: "",
           usernameErr: "",
           otpErr: "",
         });
+        if (verified) {
+          navigate("/login");
+          return;
+        }
+        setEmail(email);
       }
     } catch (error) {
       setIsServerError(true);
