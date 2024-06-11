@@ -1,0 +1,17 @@
+# syntax=docker/dockerfile:1.2
+
+FROM node:21.7-alpine3.20
+
+WORKDIR /home/node/app
+
+COPY package*.json ./
+
+RUN --mount=type=cache,target=/home/node/app/.npm \
+  npm set cache /home/node/app/.npm && \
+  npm install 
+
+COPY . .
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev"]
