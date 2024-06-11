@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "../stylesheets/spinner.css";
+import "../stylesheets/room.css";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { authenticateUser } from "../../services/helpers";
+import { authenticateUser } from "../services/helpers";
 import {
   setEmail,
   setIsAdmin,
@@ -31,7 +32,6 @@ import Input from "@mui/joy/Input";
 import SendIcon from "@mui/icons-material/Send";
 import axios from "axios";
 import { setVideoPlaybackSpeed, setVideoUrl } from "../store/videoUrlSlice";
-import "./Room.css";
 
 const StyledInput = styled("input")({
   border: "none", // remove the native input border

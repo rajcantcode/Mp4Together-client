@@ -30,7 +30,7 @@ import {
 } from "../store/userSlice";
 import { setKickSnackbarInfo } from "../store/roomSlice.js";
 
-import { resetRoomSlice, resetVideoSlice } from "../../services/helpers";
+import { resetRoomSlice, resetVideoSlice } from "../services/helpers";
 import { useState, useRef } from "react";
 
 const settings = ["Profile", "Account", "Dashboard", "Logout"];

@@ -25,7 +25,7 @@ import MenuAppBar from "../components/MenuAppBar.jsx";
 import LinkInput from "../components/LinkInput.jsx";
 import Interactive from "../components/Interactive.jsx";
 import { joinSocketRoom } from "../socket/socketUtils.js";
-import { authenticateUser, fetchUser } from "../../services/helpers.js";
+import { authenticateUser, fetchUser } from "../services/helpers.js";
 import {
   setVideoId,
   setVideoPlaybackSpeed,

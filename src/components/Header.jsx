@@ -13,7 +13,7 @@ import SendIcon from "@mui/icons-material/Send";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import { verifyUsername } from "../../services/helpers";
+import { verifyUsername } from "../services/helpers";
 import { setUsername } from "../store/userSlice";
 
 const Header = ({ renderProfile }) => {

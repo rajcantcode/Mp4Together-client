@@ -20,13 +20,13 @@ import {
   openFileSelector,
   resetVideoSlice,
   startFileShare,
-} from "../../services/helpers";
+} from "../services/helpers";
 import { useParams } from "react-router-dom";
 import { useCallback } from "react";
 import debounce from "lodash.debounce";
 import { Box, Typography } from "@mui/material";
 import VideoDetail from "./VideoDetail.jsx";
-import { useOnClickOutside } from "../../services/use-on-click-outside.js";
+import { useOnClickOutside } from "../services/use-on-click-outside.js";
 import LoadingButton from "@mui/lab/LoadingButton";
 import BlockIcon from "@mui/icons-material/Block";
 import "../stylesheets/spinner.css";

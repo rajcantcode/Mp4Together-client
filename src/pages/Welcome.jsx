@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { authenticateUser } from "../../services/helpers";
-import "./welcome.css";
+import { authenticateUser } from "../services/helpers";
+import "../stylesheets/welcome.css";
 import "../stylesheets/spinner.css";
 import Header from "../components/Header";
 import LoadingButton from "@mui/lab/LoadingButton";
