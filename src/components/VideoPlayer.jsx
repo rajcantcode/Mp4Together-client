@@ -96,10 +96,11 @@ const VideoPlayer = ({ socket }) => {
       if (!videoUrl.startsWith("blob:") || localPeer) return;
 
       const serverUrl = import.meta.env.VITE_SERVER_URL;
+
       localPeer = new Peer(`${socketRoomId}-${username}`, {
-        host: "/",
+        host: import.meta.env.VITE_PEERJS_SERVER_URL,
         // secure: true,
-        port: 3002,
+        port: import.meta.env.VITE_PEERJS_PORT,
       });
       localPeer.on("open", async (id) => {
         // send socket event to server, to let other participants know to establish connection with the peerjs server
@@ -207,7 +208,7 @@ const VideoPlayer = ({ socket }) => {
       const localPeer = new Peer(`${socketRoomId}-${username}`, {
         host: "/",
         // secure: true,
-        port: 3002,
+        port: import.meta.env.VITE_PEERJS_PORT,
       });
       localPeer.on("open", (id) => {
         socket.emit("conn-succ");
@@ -259,7 +260,7 @@ const VideoPlayer = ({ socket }) => {
 
   const emitTimestamp = ({ requester }) => {
     if (!socket) return;
-    if (!videoRef.current) return;
+    if (!videoRef.current || videoUrl.startsWith("blob:")) return;
     const timestamp = Math.trunc(videoRef.current.getCurrentTime());
     // socket.on("received-timestamp", () => {
     //   setIsTimestamp(true);
