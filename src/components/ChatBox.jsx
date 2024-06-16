@@ -134,7 +134,7 @@ const ChatBox = ({ socket, innerWidth }) => {
         height: innerWidth <= 768 ? "calc(100% - 55px)" : "100%",
         position: "relative",
         backgroundColor: "pink",
-        border: innerWidth < 768 ? "none" : "#8DEE86 2px solid",
+        border: "#8DEE86 2px solid",
       }}
     >
       <div style={{ position: "relative", height: "100%" }}>

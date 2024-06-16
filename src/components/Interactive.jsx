@@ -62,7 +62,7 @@ const Interactive = ({ socket, sfuSocket }) => {
                 }}
               >
                 <ForumIcon
-                  color={showChat ? "info" : "disabled"}
+                  sx={{ color: showChat ? "#F9F871" : "rgba(0, 0, 0, 0.26)" }}
                   fontSize="large"
                 />
               </button>
@@ -73,7 +73,7 @@ const Interactive = ({ socket, sfuSocket }) => {
                 }}
               >
                 <PeopleIcon
-                  color={showChat ? "disabled" : "info"}
+                  sx={{ color: showChat ? "rgba(0, 0, 0, 0.26)" : "#F9F871" }}
                   fontSize="large"
                 />
               </button>
