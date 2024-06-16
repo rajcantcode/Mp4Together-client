@@ -3,6 +3,9 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      screens: {
+        "max-xs": { max: "400px" },
+      },
       keyframes: {
         "caret-blink": {
           "0%,70%,100%": { opacity: "1" },
