@@ -26,6 +26,8 @@ import {
   InputOTPSlot,
 } from "../components/ui/InputOtp";
 import "../stylesheets/auth.css";
+import { useDispatch, useSelector } from "react-redux";
+import { setKickSnackbarInfo } from "../store/roomSlice";
 
 function Copyright(props) {
   return (
@@ -50,6 +52,7 @@ const defaultTheme = createTheme();
 export default function SignUp() {
   // Will be used later to redirect user to /room if signup successful
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // This state variable will be used to display error messages to the user on signUp form when they enter invalid details.
   const [signUpErrMsg, setSignUpErrMsg] = useState({
@@ -62,9 +65,13 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
 
+  const kickSnackbarInfo = useSelector(
+    (state) => state.roomInfo.kickSnackbarInfo
+  );
   const [isServerError, setIsServerError] = useState(false);
   const handleSnackbarClose = () => {
     setIsServerError(false);
+    dispatch(setKickSnackbarInfo({ show: false, title: "", color: "neutral" }));
   };
 
   useEffect(() => {
@@ -556,6 +563,17 @@ export default function SignUp() {
           <p>There was an error processing your request</p>
           <p>Please try again later</p>
         </div>
+      </Snackbar>
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        autoHideDuration={3000}
+        open={kickSnackbarInfo.show}
+        color={kickSnackbarInfo.color}
+        variant="solid"
+        onClose={handleSnackbarClose}
+        startDecorator={<ErrorOutlineIcon />}
+      >
+        <div>{kickSnackbarInfo.title}</div>
       </Snackbar>
     </>
   );
