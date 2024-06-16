@@ -103,30 +103,6 @@ const Room = () => {
 
   const [innerWidth, setInnerWidth] = useState(window.innerWidth);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setInnerWidth(window.innerWidth);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const response = await authenticateUser(dispatch);
-        if (response.status === 401 || response.status === 403)
-          navigate("/login");
-        setIsLoading(false);
-      } catch (error) {
-        // Handle server error here
-        navigate("/login");
-        console.error(error);
-      }
-    })();
-  }, []);
   const [showJoinInput, setShowJoinInput] = useState(false);
 
   //  Set disabled status state variable
@@ -148,13 +124,38 @@ const Room = () => {
   const [errorMsg, setErrorMsg] = useState("");
 
   const navigate = useNavigate();
-  const username = useSelector((state) => state.userInfo.username);
+
   const kickSnackbarInfo = useSelector(
     (state) => state.roomInfo.kickSnackbarInfo
   );
 
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
   const sfuServerUrl = import.meta.env.VITE_SFU_SERVER_URL;
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await authenticateUser(dispatch);
+        if (response.status === 401 || response.status === 403)
+          navigate("/login");
+        setIsLoading(false);
+      } catch (error) {
+        // Handle server error here
+        navigate("/login");
+        console.error(error);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setInnerWidth(window.innerWidth);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const toggleJoinInput = () => {
     setShowJoinInput(!showJoinInput);
@@ -399,7 +400,7 @@ const Room = () => {
           }}
         ></div>
         {isLoading ? ( // Render the modal if isLoading is true
-          <div className="absolute translate-y-[-50%] translate-x-[-50%] modal top-1/2 left-1/2 flex justify-between items-center">
+          <div className="absolute translate-y-[-50%] translate-x-[-50%] modal top-1/2 left-1/2 flex justify-between items-center w-max">
             <p className="text-xl text-white md:text-2xl">
               Authenticating user, please wait...
             </p>
