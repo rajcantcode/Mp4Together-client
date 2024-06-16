@@ -168,7 +168,8 @@ const Header = ({ renderProfile }) => {
               display: "flex",
               fontFamily: "monospace",
               fontWeight: 700,
-              letterSpacing: { xs: ".1rem", md: ".2rem" },
+              letterSpacing: { xs: ".1rem", md: ".15rem" },
+              fontSize: { xs: "1rem", md: "1.5rem" },
               color: "inherit",
               textDecoration: "none",
             }}
