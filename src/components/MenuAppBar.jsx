@@ -16,15 +16,17 @@ import FileCopyIcon from "@mui/icons-material/FileCopy";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import Snackbar from "@mui/joy/Snackbar";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import GitHubIcon from "@mui/icons-material/GitHub";
 
 import { useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
 // Redux imports
 import { useDispatch, useSelector } from "react-redux";
 import {
   setIsAdmin,
+  setIsGuest,
   setUserRoomId,
   setUserSocketRoomId,
 } from "../store/userSlice";
@@ -48,7 +50,7 @@ function MenuAppBar({ socket, sfuSocket }) {
 
   // Access the URL parameter using useParams from react-router-dom, Idk why redux does not give me the roomID, so I have to use url parameters
   // const { roomId } = useParams();
-  const { username, email } = useSelector((state) => state.userInfo);
+  const { username, email, isGuest } = useSelector((state) => state.userInfo);
   const { socketRoomId, roomId } = useSelector((state) => state.roomInfo);
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -68,13 +70,65 @@ function MenuAppBar({ socket, sfuSocket }) {
         navigate("/room");
       }
     };
+    const removeUser = async () => {
+      try {
+        if (!isGuest) return;
+        setExitLoading(true);
+        setShouldExit(false);
+        const response = await axios(`${baseUrl}/room/trial/${roomId}`, {
+          method: "post",
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          validateStatus: function (status) {
+            // Consider any status code less than 500 as a success
+            return status >= 200 && status < 500;
+          },
+        });
+        const resData = response.data;
+        if (response.status !== 200) {
+          if (response.status === 404) {
+            throw new Error(`${resData.msg}`);
+          }
+        }
+        if (response.status === 200) {
+          resetRoomSlice(dispatch);
+          resetVideoSlice(dispatch);
+          dispatch(setUserRoomId(""));
+          dispatch(setUserSocketRoomId(""));
+          dispatch(setIsAdmin(false));
+          dispatch(setIsGuest(false));
+          socket.emit("set-trial-expired");
+          dispatch(
+            setKickSnackbarInfo({
+              show: true,
+              title: `Your trial period has expired`,
+              color: "danger",
+            })
+          );
+          navigate("/register");
+          return true;
+        }
+      } catch (error) {
+        setSnackbarInfo({
+          show: true,
+          title: "Unable to exit room \n please try again later",
+        });
+        console.error(error);
+      } finally {
+        setExitLoading(false);
+      }
+    };
     socket.on("exit", kick);
+    socket.on("trialExpire", removeUser);
     return async () => {
       // To call exitRoom, when user clicks back or forward navigation arrows/button
       if (shouldExitRef.current) {
         await exitRoom(false);
       }
       socket.off("exit", kick);
+      socket.off("trialExpire", removeUser);
     };
   }, [socket]);
 
@@ -201,7 +255,13 @@ function MenuAppBar({ socket, sfuSocket }) {
           sx={{ padding: { xs: "0 4px", md: "0 16px" } }}
         >
           <Toolbar disableGutters sx={{ justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Box
+              sx={{
+                display: { xs: "none", md: "flex" },
+                alignItems: "center",
+                width: "60%",
+              }}
+            >
               <PlayCircleFilledIcon
                 fontSize="large"
                 sx={{ display: { xs: "none", md: "flex" }, mr: 1 }}
@@ -216,37 +276,42 @@ function MenuAppBar({ socket, sfuSocket }) {
                   display: { xs: "none", md: "flex" },
                   fontFamily: "monospace",
                   fontWeight: 700,
-                  letterSpacing: { xs: ".2rem", md: ".3rem" },
+                  letterSpacing: { xs: ".1rem", md: ".15rem" },
                   color: "inherit",
                   textDecoration: "none",
                 }}
               >
                 Mp4Together
               </Typography>
+              <Link
+                className="hidden md:flex"
+                to="https://github.com/rajcantcode/Mp4Together-client"
+                target="_blank"
+              >
+                <GitHubIcon fontSize="large" />
+              </Link>
             </Box>
 
-            <PlayCircleFilledIcon
-              sx={{ display: { xs: "flex", md: "none" }, mr: 1 }}
-            />
-            <Typography
-              variant="h5"
-              noWrap
-              component="a"
-              href="/"
-              sx={{
-                mr: 2,
-                display: { xs: "flex", md: "none" },
-                flexGrow: 1,
-                fontFamily: "monospace",
-                fontSize: 18,
-                fontWeight: 700,
-                letterSpacing: { xs: ".2rem", md: ".3rem" },
-                color: "inherit",
-                textDecoration: "none",
-              }}
-            >
-              Mp4Together
-            </Typography>
+            {/* small screen UI design start */}
+            <Box className="flex items-center w-[60%]">
+              <PlayCircleFilledIcon
+                sx={{ display: { xs: "flex", md: "none" }, mr: 1 }}
+              />
+
+              <Link
+                to="/"
+                className="flex font-mono font-bold md:hidden tracking-[.1rem] text-base max-xs:text-sm mr-2"
+              >
+                Mp4Together
+              </Link>
+              <Link
+                className="flex md:hidden"
+                to="https://github.com/rajcantcode/Mp4Together-client"
+                target="_blank"
+              >
+                <GitHubIcon fontSize="medium" />
+              </Link>
+            </Box>
             {/* small screen UI design end */}
 
             <Box
@@ -258,7 +323,10 @@ function MenuAppBar({ socket, sfuSocket }) {
               }}
             >
               <Tooltip title="Copy room link">
-                <IconButton onClick={copyRoomLink} sx={{ marginRight: "1rem" }}>
+                <IconButton
+                  onClick={copyRoomLink}
+                  sx={{ marginRight: { md: "1rem", xs: ".35rem" } }}
+                >
                   <FileCopyIcon sx={{ color: "yellow" }} />
                 </IconButton>
               </Tooltip>
@@ -274,7 +342,7 @@ function MenuAppBar({ socket, sfuSocket }) {
                   sx={{
                     display: "inline-flex",
                     minWidth: "30px",
-                    marginRight: "1rem",
+                    marginRight: { md: "1rem", xs: ".6rem" },
                   }}
                   className="exit-btn"
                 >
@@ -286,8 +354,7 @@ function MenuAppBar({ socket, sfuSocket }) {
               <Tooltip title="Open details">
                 <IconButton
                   onClick={handleOpenUserMenu}
-                  sx={{ p: 0, marginRight: "1rem" }}
-                  className="mr-2"
+                  sx={{ p: 0, marginRight: { md: "1rem", xs: "0rem" } }}
                 >
                   {/* Use this to change profile photo */}
                   <Avatar
