@@ -8,7 +8,7 @@ export const roomSlice = createSlice({
     socketRoomId: "",
     members: [],
     admins: [],
-    isRoomValid: true,
+    isRoomValid: false,
     isSocketRoomValid: true,
     membersMicState: {},
     membersMuteState: {},
