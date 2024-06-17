@@ -166,11 +166,16 @@ const Main = () => {
     sfuSocket.on("ready", () => {
       setSfuSocket(sfuSocket);
     });
+
     return () => {
       socket.disconnect();
       sfuSocket.disconnect();
     };
   }, [isValidUser]);
+
+  useEffect(() => {
+    setShowSnackbar(isRoomValid);
+  }, [isRoomValid]);
 
   return (
     <>
@@ -189,17 +194,6 @@ const Main = () => {
           <MenuAppBar socket={socket} sfuSocket={sfuSocket} />
           <LinkInput socket={socket} />
           <Interactive socket={socket} sfuSocket={sfuSocket} />
-          <Snackbar
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            autoHideDuration={3000}
-            open={showSnackbar}
-            color="success"
-            variant="solid"
-            onClose={handleSnackbarClose}
-            startDecorator={<ShareIcon />}
-          >
-            <div>Share the room link with people you want to watch </div>
-          </Snackbar>
         </Container>
       ) : (
         <>
@@ -224,6 +218,17 @@ const Main = () => {
           </div>
         </>
       )}
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        autoHideDuration={3000}
+        open={showSnackbar}
+        color="success"
+        variant="solid"
+        onClose={handleSnackbarClose}
+        startDecorator={<ShareIcon />}
+      >
+        <div>Share the room link with people you want to watch </div>
+      </Snackbar>
     </>
   );
 };
