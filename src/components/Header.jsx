@@ -5,7 +5,7 @@ import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import PlayCircleFilledIcon from "@mui/icons-material/PlayCircleFilled";
 import { Avatar, Box, IconButton, Menu, Tooltip } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import LoadingButton from "@mui/lab/LoadingButton";
 import EditIcon from "@mui/icons-material/Edit";
@@ -13,10 +13,14 @@ import SendIcon from "@mui/icons-material/Send";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import { verifyUsername } from "../services/helpers";
+import {
+  authenticateUser,
+  fetchUser,
+  verifyUsername,
+} from "../services/helpers";
 import { setUsername } from "../store/userSlice";
 
-const Header = ({ renderProfile }) => {
+const Header = ({ renderProfile, fetchUserDetails = false }) => {
   const [anchorElUser, setAnchorElUser] = useState(null);
   const [editUsernameState, setEditUsernameState] = useState({
     state: false,
@@ -43,6 +47,13 @@ const Header = ({ renderProfile }) => {
       error: "",
     });
   };
+
+  useEffect(() => {
+    if (!fetchUserDetails) return;
+    if (!username || !email) {
+      authenticateUser(dispatch);
+    }
+  }, []);
   const handleChangeUsername = async () => {
     try {
       setEditUsernameState((prev) => {
@@ -183,7 +194,7 @@ const Header = ({ renderProfile }) => {
             <GitHubIcon fontSize="large" />
           </Link>
         </Toolbar>
-        {renderProfile && (
+        {renderProfile && username && email && (
           <Box>
             <Tooltip title="Open details">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
