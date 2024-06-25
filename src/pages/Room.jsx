@@ -123,17 +123,25 @@ const Room = () => {
   //   Set error message state variable
   const [errorMsg, setErrorMsg] = useState("");
 
+  const [isBackgroundLoaded, setIsBackgroundLoaded] = useState(false);
+
   const navigate = useNavigate();
 
   const kickSnackbarInfo = useSelector(
     (state) => state.roomInfo.kickSnackbarInfo
   );
+  const { username, email } = useSelector((state) => state.userInfo);
 
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
   const sfuServerUrl = import.meta.env.VITE_SFU_SERVER_URL;
 
   useEffect(() => {
+    import("./Main");
     (async () => {
+      if (username && email) {
+        setIsLoading(false);
+        return;
+      }
       try {
         const response = await authenticateUser(dispatch);
         if (response.status === 401 || response.status === 403)
@@ -152,10 +160,27 @@ const Room = () => {
       setInnerWidth(window.innerWidth);
     };
     window.addEventListener("resize", handleResize);
+
     return () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    const loadImage = (url) => {
+      const img = new Image();
+      img.onload = () => {
+        setIsBackgroundLoaded(true);
+      };
+      img.src = url;
+    };
+    const imageUrl = innerWidth > 768 ? "bg.webp" : "bg-mobile.webp";
+    loadImage(imageUrl);
+
+    return () => {
+      setIsBackgroundLoaded(false);
+    };
+  }, [innerWidth]);
 
   const toggleJoinInput = () => {
     setShowJoinInput(!showJoinInput);
@@ -391,10 +416,13 @@ const Room = () => {
           className="bg"
           style={{
             height: "calc(100vh - 64px)",
-            backgroundImage:
-              innerWidth > 768
-                ? "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(/bg.webp)"
-                : "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(bg-mobile.webp)",
+            backgroundImage: isBackgroundLoaded
+              ? innerWidth > 768
+                ? `linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(bg.webp)`
+                : "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(bg-mobile.webp)"
+              : innerWidth > 768
+              ? "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(bg-small.webp)"
+              : "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(bg-mobile-small.webp)",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -510,15 +538,25 @@ const Room = () => {
                     />
                     <LoadingButton
                       className="send-room-link"
-                      sx={{ display: "block", width: "fit-content" }}
+                      sx={{
+                        display: "block",
+                        width: "fit-content",
+                      }}
+                      startIcon={
+                        <SendIcon
+                          sx={{
+                            fontSize: "1.9rem !important",
+                            color: "#50ff00",
+                          }}
+                        />
+                      }
                       disableRipple={true}
                       variant="text"
                       onClick={joinRoom}
                       loading={loadingStatus.sendBtn}
+                      loadingPosition="start"
                       disabled={disabledStatus.sendBtn}
-                    >
-                      <SendIcon sx={{ fontSize: "1.9rem", color: "#50ff00" }} />
-                    </LoadingButton>
+                    ></LoadingButton>
                   </Box>
                   <p style={{ color: "red" }}>{errorMsg}</p>
                 </>
