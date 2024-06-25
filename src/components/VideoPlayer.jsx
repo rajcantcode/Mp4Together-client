@@ -97,7 +97,7 @@ const VideoPlayer = ({ socket }) => {
 
       const serverUrl = import.meta.env.VITE_SERVER_URL;
 
-      localPeer = new Peer(`${socketRoomId}-${username}`);
+      localPeer = new Peer(`${socketRoomId}-${username}`, { secure: true });
 
       localPeer.on("open", async (id) => {
         // send socket event to server, to let other participants know to establish connection with the peerjs server
@@ -203,7 +203,9 @@ const VideoPlayer = ({ socket }) => {
         socket.emit("conn-succ");
       }
 
-      const localPeer = new Peer(`${socketRoomId}-${username}`);
+      const localPeer = new Peer(`${socketRoomId}-${username}`, {
+        secure: true,
+      });
       localPeer.on("open", (id) => {
         socket.emit("conn-succ");
       });

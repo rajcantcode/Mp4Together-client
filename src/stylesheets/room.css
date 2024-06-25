@@ -9,3 +9,14 @@
 .Mui-focused {
   color: #2f353b !important;
 }
+
+.send-room-link .MuiLoadingButton-loadingIndicator {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.send-room-link .MuiCircularProgress-root {
+  color: white;
+  width: 1.9rem !important;
+  height: 1.9rem !important;
+}

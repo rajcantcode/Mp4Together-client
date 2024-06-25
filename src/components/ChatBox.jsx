@@ -14,7 +14,6 @@ import {
   MessageInput,
   ConversationHeader,
   MessageSeparator,
-  Avatar,
 } from "@chatscope/chat-ui-kit-react";
 
 // Socket.io import

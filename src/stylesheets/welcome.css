@@ -16,11 +16,10 @@
   transform: translate(-50%, -50%);
 }
 
-.welcome-text {
+/* .welcome-text {
   font-size: 32px;
-  color: #007bff;
   margin-bottom: 20px;
-}
+} */
 
 .buttons-container {
   display: flex;

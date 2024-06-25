@@ -1,12 +1,10 @@
-.auth-form .css-1jy569b-MuiFormLabel-root-MuiInputLabel-root.Mui-focused {
+.auth-form label.Mui-focused {
   color: #d2d027 !important;
   font-size: 1.1rem;
   font-weight: 800;
 }
 
-.auth-form
-  .css-md26zr-MuiInputBase-root-MuiOutlinedInput-root.Mui-focused
-  .MuiOutlinedInput-notchedOutline {
+.auth-form .Mui-focused fieldset {
   border-color: #d2d027 !important;
 }
 
