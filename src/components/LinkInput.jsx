@@ -30,7 +30,7 @@ import { useOnClickOutside } from "../services/use-on-click-outside.js";
 import LoadingButton from "@mui/lab/LoadingButton";
 import BlockIcon from "@mui/icons-material/Block";
 import "../stylesheets/spinner.css";
-import { Peer } from "peerjs";
+import { setKickSnackbarInfo } from "../store/roomSlice.js";
 
 export default function LinkInput({ socket }) {
   const [inpVideoUrl, setInpVideoUrl] = useState("");
@@ -40,7 +40,6 @@ export default function LinkInput({ socket }) {
   const { socketRoomId } = useSelector((state) => state.roomInfo);
   const { videoUrl } = useSelector((state) => state.videoUrl);
   const dispatch = useDispatch();
-  const [serverErrorMessage, setServerErrorMessage] = useState("");
   const [videoDetails, setVideoDetails] = useState(null);
   const [videoDetailsLoading, setVideoDetailsLoading] = useState(false);
   const formRef = useRef(null);
@@ -73,10 +72,6 @@ export default function LinkInput({ socket }) {
   }, [socket]);
 
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
-
-  const handleSnackbarClose = () => {
-    setServerErrorMessage("");
-  };
 
   const validateVideoUrl = async (url) => {
     try {
@@ -142,12 +137,24 @@ export default function LinkInput({ socket }) {
       resetVideoSlice(dispatch);
       if (error instanceof AxiosError && error.code === "ERR_BAD_REQUEST") {
         // Display toast that the URL is invalid
-        setServerErrorMessage("No such Video exists");
+        dispatch(
+          setKickSnackbarInfo({
+            show: true,
+            title: "No such Video exists",
+            color: "neutral",
+          })
+        );
         return;
       }
       if (error instanceof Error) {
         // Display toast with message received from server
-        setServerErrorMessage(error.message);
+        dispatch(
+          setKickSnackbarInfo({
+            show: true,
+            title: error.message,
+            color: "neutral",
+          })
+        );
         return;
       }
       console.error(error);
@@ -176,7 +183,13 @@ export default function LinkInput({ socket }) {
         },
       });
       if (response.status === 400) {
-        setServerErrorMessage("Invalid query");
+        dispatch(
+          setKickSnackbarInfo({
+            show: true,
+            title: "Invalid query",
+            color: "neutral",
+          })
+        );
         return;
       }
       if (response.status === 200) {
@@ -185,7 +198,13 @@ export default function LinkInput({ socket }) {
       }
     } catch (error) {
       console.error(error);
-      setServerErrorMessage("Unable to fetch video details");
+      dispatch(
+        setKickSnackbarInfo({
+          show: true,
+          title: "Unable to fetch video details",
+          color: "neutral",
+        })
+      );
     } finally {
       setVideoDetailsLoading(false);
     }
@@ -452,17 +471,6 @@ export default function LinkInput({ socket }) {
           </LoadingButton>
         </div>
       </dialog>
-      <Snackbar
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        autoHideDuration={3000}
-        open={serverErrorMessage !== ""}
-        color="danger"
-        variant="solid"
-        onClose={handleSnackbarClose}
-        startDecorator={<ErrorOutlineIcon />}
-      >
-        <div>{serverErrorMessage}</div>
-      </Snackbar>
     </>
   );
 }

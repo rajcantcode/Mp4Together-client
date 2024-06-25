@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import axios from "axios";
 import io from "socket.io-client";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import "../stylesheets/spinner.css";
 import {
+  setKickSnackbarInfo,
   setRoomAdmins,
   setRoomId,
   setRoomMembers,
@@ -25,7 +25,7 @@ import MenuAppBar from "../components/MenuAppBar.jsx";
 import LinkInput from "../components/LinkInput.jsx";
 import Interactive from "../components/Interactive.jsx";
 import { joinSocketRoom } from "../socket/socketUtils.js";
-import { authenticateUser, fetchUser } from "../services/helpers.js";
+import { fetchUser } from "../services/helpers.js";
 import {
   setVideoId,
   setVideoPlaybackSpeed,
@@ -36,6 +36,7 @@ import {
 import Snackbar from "@mui/joy/Snackbar";
 import ShareIcon from "@mui/icons-material/Share";
 import Header from "../components/Header.jsx";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 // This component can be accessed by user in two ways
 // 1] By visiting /room path and entering roomID
@@ -60,14 +61,16 @@ const Main = () => {
   const { socketRoomId, roomId, admins, isRoomValid } = useSelector(
     (state) => state.roomInfo
   );
+  const kickSnackbarInfo = useSelector(
+    (state) => state.roomInfo.kickSnackbarInfo
+  );
   const [showSnackbar, setShowSnackbar] = useState(isRoomValid);
 
-  const handleSnackbarClose = () => {
-    setShowSnackbar(false);
-  };
-
   useEffect(() => {
-    if (isValidUser) return;
+    if (isValidUser) {
+      import("./Room.jsx");
+      return;
+    }
     (async function () {
       const reqRoomId = params.roomId;
       const res = await fetchUser(reqRoomId);
@@ -126,6 +129,7 @@ const Main = () => {
         }
       }
     })();
+    import("./Room.jsx");
   }, []);
 
   useEffect(() => {
@@ -141,8 +145,9 @@ const Main = () => {
         mainRoomId: roomId,
         socketRoomId,
       },
+      secure: true,
     });
-    const sfuSocket = io(sfuServerUrl, { withCredentials: true });
+    const sfuSocket = io(sfuServerUrl, { withCredentials: true, secure: true });
 
     socket.on("ready", () => {
       joinSocketRoom(socketRoomId, socket, username, isGuest);
@@ -176,6 +181,14 @@ const Main = () => {
   useEffect(() => {
     setShowSnackbar(isRoomValid);
   }, [isRoomValid]);
+
+  const handleErrorSnackbarClose = () => {
+    dispatch(setKickSnackbarInfo({ show: false, title: "", color: "neutral" }));
+  };
+
+  const handleSnackbarClose = () => {
+    setShowSnackbar(false);
+  };
 
   return (
     <>
@@ -220,14 +233,35 @@ const Main = () => {
       )}
       <Snackbar
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        autoHideDuration={3000}
+        autoHideDuration={5000}
         open={showSnackbar}
         color="success"
         variant="solid"
         onClose={handleSnackbarClose}
         startDecorator={<ShareIcon />}
+        sx={{ backgroundColor: "#00d4ad" }}
       >
-        <div>Share the room link with people you want to watch </div>
+        <div>
+          <p className="sm:text-lg text-[0.9rem] leading-5">
+            Share the room link with people you want to watch{" "}
+          </p>
+          <p className="sm:text-sm text-[0.7rem] leading-3">
+            You can resize the video, chat, and participants panel
+          </p>
+        </div>
+      </Snackbar>
+
+      {/* Snackbar for displaying error messages */}
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        autoHideDuration={3000}
+        open={kickSnackbarInfo.show}
+        color="danger"
+        variant="solid"
+        onClose={handleErrorSnackbarClose}
+        startDecorator={<ErrorOutlineIcon />}
+      >
+        <div>{kickSnackbarInfo.title}</div>
       </Snackbar>
     </>
   );
