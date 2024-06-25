@@ -64,6 +64,11 @@ export default function SignIn() {
       verifyOtp();
     }
   }, [otp]);
+
+  useEffect(() => {
+    import("./Room");
+  }, []);
+
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
   const handleSnackbarClose = () => {
     setIsServerError(false);

@@ -13,11 +13,11 @@ import { setKickSnackbarInfo } from "../store/roomSlice";
 const Welcome = () => {
   const [isLoading, setIsLoading] = useState(true); // State to track loading status
   const [loadGuestLogin, setLoadGuestLogin] = useState(false);
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   useEffect(() => {
+    import("./Room");
     (async () => {
       try {
         const response = await authenticateUser(dispatch);
@@ -102,7 +102,7 @@ const Welcome = () => {
         ) : (
           <>
             <div className="container">
-              <h1 className="text-3xl text-white md:text-4xl welcome-text">
+              <h1 className="mb-4 text-3xl text-white md:text-4xl welcome-text">
                 Welcome to Mp4Together
               </h1>
               <p className="text-2xl text-white md:text-3xl sub-text mb-[20px]">
