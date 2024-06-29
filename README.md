@@ -4,7 +4,7 @@ Built with the React, MongoDB, Express, Node.js
 ## Features
 - Room functionality
 - Synchronised video playback
-- Communicate via text chat
+- Communicate via text chat and live audio calling
 
 ## Getting started
 This is the frontend repository, you also need backend repository code to run this locally. You can find it [here](https://github.com/rajcantcode/Mp4Together-server.git)
