@@ -361,7 +361,7 @@ export default function SignUp() {
             >
               {email === ""
                 ? "Sign up"
-                : `Please enter the verification code sent to ${email}`}
+                : `Please enter the verification code sent to ${email}. If the email does not appear in your inbox, please check your spam folder.`}
             </Typography>
             {email === "" ? (
               <Box
@@ -376,6 +376,7 @@ export default function SignUp() {
                     item
                     xs={24}
                     sm={12}
+                    data-test="username-field"
                     sx={{
                       "::after": {
                         content: `'${signUpErrMsg.usernameErr}'`,
@@ -400,6 +401,7 @@ export default function SignUp() {
                     />
                   </Grid>
                   <Grid
+                    data-test="email-field"
                     item
                     xs={12}
                     sx={{
@@ -428,6 +430,7 @@ export default function SignUp() {
                   </Grid>
                   <Grid
                     item
+                    data-test="password-field"
                     xs={12}
                     sx={{
                       "::after": {
@@ -457,6 +460,7 @@ export default function SignUp() {
                   <Grid item xs={12}></Grid>
                 </Grid>
                 <LoadingButton
+                  data-test="submit-btn"
                   type="submit"
                   fullWidth
                   variant="contained"
@@ -491,7 +495,7 @@ export default function SignUp() {
               </Box>
             ) : (
               <Box className="flex flex-col items-center w-full ">
-                <Box className="mt-8">
+                <Box className="mt-8" data-test="otp-container">
                   <InputOTP
                     maxLength={6}
                     value={otp}
