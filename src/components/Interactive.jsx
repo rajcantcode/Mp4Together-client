@@ -47,7 +47,13 @@ const Interactive = ({ socket, sfuSocket }) => {
         {/* {videoUrlValidity && <VideoPlayer socket={socket} />} */}
         <VideoPlayer socket={socket} />
       </ResizablePanel>
-      <ResizableHandle />
+      <ResizableHandle
+        style={{
+          backgroundColor: "rgba(255, 255, 255, 0.5)",
+        }}
+        className="!h-[8px] sm:!h-auto w-auto sm:w-[8px] handler"
+        withHandle={true}
+      />
       <ResizablePanel
         defaultSize={innerWidth <= 768 ? 60 : 30}
         minSize={innerWidth <= 768 ? 40 : 30}
@@ -101,7 +107,13 @@ const Interactive = ({ socket, sfuSocket }) => {
             <ResizablePanel defaultSize={50} minSize={30}>
               <ChatBox socket={socket} innerWidth={innerWidth} />
             </ResizablePanel>
-            <ResizableHandle />
+            <ResizableHandle
+              style={{
+                height: "8px",
+                backgroundColor: "rgba(255, 255, 255, 0.5)",
+              }}
+              withHandle={true}
+            />
             <ResizablePanel defaultSize={50} minSize={30}>
               <MemberList
                 socket={socket}
@@ -115,4 +127,5 @@ const Interactive = ({ socket, sfuSocket }) => {
     </ResizablePanelGroup>
   );
 };
+
 export default Interactive;
