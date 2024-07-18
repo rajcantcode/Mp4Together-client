@@ -34,8 +34,9 @@ const VideoPlayer = ({ socket }) => {
   // The below two state variables solely exist to determine whether "handlePlayVideo" and "handlePauseVideo" function should execute or not.
   // Since I am using "isPlaying" to pause or play the video, and changing state of "isPlaying" leads to calling "handlePlayVideo" or "handlePauseVideo" depending upon value of "isPlaying", which causes infinite loop in those functions.
   // So I use "isTimestamp" and "executeHandlePauseVideo" as guard clause to return
-  const [isTimestamp, setIsTimestamp] = useState(false);
-  const [executeHandlePauseVideo, setExecuteHandlePauseVideo] = useState(true);
+  const isTimestamp = useRef(false);
+
+  const executeHandlePauseVideo = useRef(true);
 
   const videoRef = useRef(null);
   const frontEndUrl = import.meta.env.VITE_FRONTEND_URL;
@@ -229,11 +230,11 @@ const VideoPlayer = ({ socket }) => {
   };
 
   const handlePauseEvent = (data) => {
-    setExecuteHandlePauseVideo(false);
+    executeHandlePauseVideo.current = false;
     setIsPlaying(false);
   };
   const handlePlayEvent = ({ curTimestamp, t }) => {
-    setIsTimestamp(true);
+    isTimestamp.current = true;
     const skipToTime = curTimestamp + (Date.now() - t) / 1000;
     videoRef.current.seekTo(skipToTime, "seconds");
     setIsPlaying(true);
@@ -241,7 +242,7 @@ const VideoPlayer = ({ socket }) => {
 
   const handleTimestamp = ({ timestamp, t }) => {
     if (!videoRef.current) return;
-    setIsTimestamp(true);
+    isTimestamp.current = true;
     let skipToTime = timestamp;
     if (t) {
       skipToTime = timestamp + (Date.now() - t) / 1000;
@@ -275,8 +276,8 @@ const VideoPlayer = ({ socket }) => {
 
   const handlePlayVideo = () => {
     if (!socket) return;
-    if (isTimestamp) {
-      setIsTimestamp(false);
+    if (isTimestamp.current) {
+      isTimestamp.current = false;
       return;
     }
     if (isAdmin) {
@@ -300,8 +301,8 @@ const VideoPlayer = ({ socket }) => {
 
   const handlePauseVideo = () => {
     if (!socket) return;
-    if (!executeHandlePauseVideo) {
-      setExecuteHandlePauseVideo(true);
+    if (!executeHandlePauseVideo.current) {
+      executeHandlePauseVideo.current = true;
       return;
     }
     if (isAdmin) {
