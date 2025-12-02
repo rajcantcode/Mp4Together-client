@@ -13,6 +13,8 @@ import { setKickSnackbarInfo } from "../store/roomSlice";
 const Welcome = () => {
   const [isLoading, setIsLoading] = useState(true); // State to track loading status
   const [loadGuestLogin, setLoadGuestLogin] = useState(false);
+  const [isBackgroundLoaded, setIsBackgroundLoaded] = useState(false);
+  const [innerWidth, setInnerWidth] = useState(window.innerWidth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -31,6 +33,22 @@ const Welcome = () => {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    const loadImage = (url) => {
+      const img = new Image();
+      img.onload = () => {
+        setIsBackgroundLoaded(true);
+      };
+      img.src = url;
+    };
+    const imageUrl = innerWidth > 768 ? "bg.webp" : "bg-mobile.webp";
+    loadImage(imageUrl);
+
+    return () => {
+      setIsBackgroundLoaded(false);
+    };
+  }, [innerWidth]);
 
   const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -79,7 +97,16 @@ const Welcome = () => {
       <div
         className="w-full"
         style={{
-          backgroundColor: "transparent",
+          // backgroundColor: "transparent",
+          backgroundImage: isBackgroundLoaded
+            ? innerWidth > 768
+              ? `linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(bg.webp)`
+              : "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(bg-mobile.webp)"
+            : innerWidth > 768
+            ? "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(bg-small.webp)"
+            : "linear-gradient(180deg, rgba(131,114,255,0.779171043417367) 100%, rgba(131,114,255,0.78) 100%), url(bg-mobile-small.webp)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
           height: "calc(100vh - 64px)",
         }}
       >
@@ -110,13 +137,22 @@ const Welcome = () => {
                 with friends and family ? You are at the right place.
               </p>
               <div className="buttons-container">
-                <Link to="/register" className="btn register-btn">
+                <Link
+                  data-test="register-btn"
+                  to="/register"
+                  className="btn register-btn"
+                >
                   Register
                 </Link>
-                <Link to="/login" className="btn login-btn">
+                <Link
+                  data-test="login-btn"
+                  to="/login"
+                  className="btn login-btn"
+                >
                   Login
                 </Link>
                 <LoadingButton
+                  data-test="guest-login-btn"
                   sx={{
                     margin: "10px",
                     padding: "10px",
